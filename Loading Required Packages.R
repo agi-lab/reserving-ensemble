@@ -9,7 +9,7 @@ if (!require("gamlss")) install.packages("gamlss")
 if (!require("ChainLadder")) install.packages("ChainLadder")
 #install.packages("ChainLadder")
 if (!require("ggplot2")) install.packages("ggplot2")
-
+install.packages("tweedie")
 
 
 
@@ -21,3 +21,5 @@ library("gamlss.inf")
 library("gamlss")
 library("ChainLadder")
 library("ggplot2")
+library("tweedie")
+library("coda")
