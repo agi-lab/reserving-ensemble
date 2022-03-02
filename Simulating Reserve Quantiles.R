@@ -102,21 +102,30 @@ simulate_PPCF<-function(model_subCount,model_subPayments,train_cumF,newdataFC,ne
   return(simy)
 }
 
-reserve_par1_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par2_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par3_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par4_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par5_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par6_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par7_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par8_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
+reserve_par1_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par2_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par3_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par4_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par5_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par6_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par7_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par8_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par9_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par10_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par11_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par12_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par13_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par14_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par15_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par16_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par17_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
 
 
 ##Equally Weighted Ensemble and BMV
-reserve_BMV_newSimulScheme<-matrix(NA,nrow=1000,ncol=ntri)
-reserve_par1_newEW<-matrix(NA,nrow=1000,ncol=ntri)
+reserve_BMV_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par1_newEW<-matrix(NA,nrow=1000,ncol=20)
 
-for (D in 1:ntri){
+for (D in 1:20){
   
   set.seed(20200130+D)
   U<-runif(1000)
@@ -989,6 +998,468 @@ for (D in 1:ntri){
   }
   OW_par8_new_Var<-rbind(OW_par8_new_Var1,OW_par8_new_Var2)
   
+  
+  ##Ensemble 9
+  
+  mix_ind_par9_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par9_new[[D]][1])))+1
+  OW_par9_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par9_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par9_subset1[i]==1){OW_par9_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par9_new,],k=1)}
+    else if(mix_ind_par9_subset1[i]==2){OW_par9_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par9_new,],k=1)}
+    else if(mix_ind_par9_subset1[i]==3){OW_par9_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par9_new,],k=1)}
+    else if(mix_ind_par9_subset1[i]==4){OW_par9_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset1[i]==5){OW_par9_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset1[i]==6){OW_par9_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par9_new,],k=1)}
+    else if(mix_ind_par9_subset1[i]==7){OW_par9_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset1[i]==8){OW_par9_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset1[i]==9){OW_par9_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par9_new,],k=1)}
+    else if(mix_ind_par9_subset1[i]==10){OW_par9_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset1[i]==11){OW_par9_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset1[i]==12){OW_par9_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par9_new,],k=1)}
+    else if(mix_ind_par9_subset1[i]==13){OW_par9_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset1[i]==14){OW_par9_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset1[i]==15){OW_par9_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par9_new,],newdata_sigma=out_sample_sigma[ind_subset1_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset1[i]==16){OW_par9_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par9_new,],newdata_sigma =out_sample_sigma[ind_subset1_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset1[i]==17){OW_par9_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par9_new,],2,40,k=1)}
+    else{OW_par9_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par9_new,],out_sample[ind_subset1_par9_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par9_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par9_new[[D]][2])))+1
+  OW_par9_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par9_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par9_subset2[i]==1){OW_par9_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par9_new,],k=1)}
+    else if(mix_ind_par9_subset2[i]==2){OW_par9_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par9_new,],k=1)}
+    else if(mix_ind_par9_subset2[i]==3){OW_par9_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par9_new,],k=1)}
+    else if(mix_ind_par9_subset2[i]==4){OW_par9_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset2[i]==5){OW_par9_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset2[i]==6){OW_par9_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par9_new,],k=1)}
+    else if(mix_ind_par9_subset2[i]==7){OW_par9_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset2[i]==8){OW_par9_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset2[i]==9){OW_par9_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par9_new,],k=1)}
+    else if(mix_ind_par9_subset2[i]==10){OW_par9_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset2[i]==11){OW_par9_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset2[i]==12){OW_par9_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par9_new,],k=1)}
+    else if(mix_ind_par9_subset2[i]==13){OW_par9_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset2[i]==14){OW_par9_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset2[i]==15){OW_par9_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par9_new,],newdata_sigma=out_sample_sigma[ind_subset2_par9_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par9_subset2[i]==16){OW_par9_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par9_new,],newdata_sigma =out_sample_sigma[ind_subset2_par9_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par9_subset2[i]==17){OW_par9_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par9_new,],2,40,k=1)}
+    else{OW_par9_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par9_new,],out_sample[ind_subset2_par9_new,],N_in,2,40,k=1)}
+  }
+  OW_par9_new_Var<-rbind(OW_par9_new_Var1,OW_par9_new_Var2)
+  
+  #Ensemble 10
+
+  
+  mix_ind_par10_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par10_new[[D]][1])))+1
+  OW_par10_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par10_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par10_subset1[i]==1){OW_par10_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par10_new,],k=1)}
+    else if(mix_ind_par10_subset1[i]==2){OW_par10_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par10_new,],k=1)}
+    else if(mix_ind_par10_subset1[i]==3){OW_par10_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par10_new,],k=1)}
+    else if(mix_ind_par10_subset1[i]==4){OW_par10_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset1[i]==5){OW_par10_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset1[i]==6){OW_par10_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par10_new,],k=1)}
+    else if(mix_ind_par10_subset1[i]==7){OW_par10_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset1[i]==8){OW_par10_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset1[i]==9){OW_par10_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par10_new,],k=1)}
+    else if(mix_ind_par10_subset1[i]==10){OW_par10_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset1[i]==11){OW_par10_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset1[i]==12){OW_par10_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par10_new,],k=1)}
+    else if(mix_ind_par10_subset1[i]==13){OW_par10_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset1[i]==14){OW_par10_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset1[i]==15){OW_par10_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par10_new,],newdata_sigma=out_sample_sigma[ind_subset1_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset1[i]==16){OW_par10_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par10_new,],newdata_sigma =out_sample_sigma[ind_subset1_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset1[i]==17){OW_par10_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par10_new,],2,40,k=1)}
+    else{OW_par10_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par10_new,],out_sample[ind_subset1_par10_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par10_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par10_new[[D]][2])))+1
+  OW_par10_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par10_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par10_subset2[i]==1){OW_par10_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par10_new,],k=1)}
+    else if(mix_ind_par10_subset2[i]==2){OW_par10_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par10_new,],k=1)}
+    else if(mix_ind_par10_subset2[i]==3){OW_par10_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par10_new,],k=1)}
+    else if(mix_ind_par10_subset2[i]==4){OW_par10_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset2[i]==5){OW_par10_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset2[i]==6){OW_par10_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par10_new,],k=1)}
+    else if(mix_ind_par10_subset2[i]==7){OW_par10_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset2[i]==8){OW_par10_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset2[i]==9){OW_par10_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par10_new,],k=1)}
+    else if(mix_ind_par10_subset2[i]==10){OW_par10_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset2[i]==11){OW_par10_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset2[i]==12){OW_par10_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par10_new,],k=1)}
+    else if(mix_ind_par10_subset2[i]==13){OW_par10_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset2[i]==14){OW_par10_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset2[i]==15){OW_par10_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par10_new,],newdata_sigma=out_sample_sigma[ind_subset2_par10_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par10_subset2[i]==16){OW_par10_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par10_new,],newdata_sigma =out_sample_sigma[ind_subset2_par10_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par10_subset2[i]==17){OW_par10_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par10_new,],2,40,k=1)}
+    else{OW_par10_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par10_new,],out_sample[ind_subset2_par10_new,],N_in,2,40,k=1)}
+  }
+  OW_par10_new_Var<-rbind(OW_par10_new_Var1,OW_par10_new_Var2)
+  
+  
+  ##Ensemble 11
+  
+  mix_ind_par11_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par11_new[[D]][1])))+1
+  OW_par11_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par11_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par11_subset1[i]==1){OW_par11_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par11_new,],k=1)}
+    else if(mix_ind_par11_subset1[i]==2){OW_par11_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par11_new,],k=1)}
+    else if(mix_ind_par11_subset1[i]==3){OW_par11_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par11_new,],k=1)}
+    else if(mix_ind_par11_subset1[i]==4){OW_par11_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset1[i]==5){OW_par11_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset1[i]==6){OW_par11_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par11_new,],k=1)}
+    else if(mix_ind_par11_subset1[i]==7){OW_par11_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset1[i]==8){OW_par11_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset1[i]==9){OW_par11_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par11_new,],k=1)}
+    else if(mix_ind_par11_subset1[i]==10){OW_par11_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset1[i]==11){OW_par11_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset1[i]==12){OW_par11_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par11_new,],k=1)}
+    else if(mix_ind_par11_subset1[i]==13){OW_par11_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset1[i]==14){OW_par11_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset1[i]==15){OW_par11_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par11_new,],newdata_sigma=out_sample_sigma[ind_subset1_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset1[i]==16){OW_par11_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par11_new,],newdata_sigma =out_sample_sigma[ind_subset1_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset1[i]==17){OW_par11_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par11_new,],2,40,k=1)}
+    else{OW_par11_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par11_new,],out_sample[ind_subset1_par11_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par11_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par11_new[[D]][2])))+1
+  OW_par11_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par11_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par11_subset2[i]==1){OW_par11_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par11_new,],k=1)}
+    else if(mix_ind_par11_subset2[i]==2){OW_par11_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par11_new,],k=1)}
+    else if(mix_ind_par11_subset2[i]==3){OW_par11_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par11_new,],k=1)}
+    else if(mix_ind_par11_subset2[i]==4){OW_par11_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset2[i]==5){OW_par11_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset2[i]==6){OW_par11_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par11_new,],k=1)}
+    else if(mix_ind_par11_subset2[i]==7){OW_par11_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset2[i]==8){OW_par11_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset2[i]==9){OW_par11_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par11_new,],k=1)}
+    else if(mix_ind_par11_subset2[i]==10){OW_par11_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset2[i]==11){OW_par11_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset2[i]==12){OW_par11_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par11_new,],k=1)}
+    else if(mix_ind_par11_subset2[i]==13){OW_par11_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset2[i]==14){OW_par11_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset2[i]==15){OW_par11_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par11_new,],newdata_sigma=out_sample_sigma[ind_subset2_par11_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par11_subset2[i]==16){OW_par11_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par11_new,],newdata_sigma =out_sample_sigma[ind_subset2_par11_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par11_subset2[i]==17){OW_par11_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par11_new,],2,40,k=1)}
+    else{OW_par11_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par11_new,],out_sample[ind_subset2_par11_new,],N_in,2,40,k=1)}
+  }
+  OW_par11_new_Var<-rbind(OW_par11_new_Var1,OW_par11_new_Var2)
+  
+  ##Ensemble 12
+  
+  mix_ind_par12_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par12_new[[D]][1])))+1
+  OW_par12_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par12_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par12_subset1[i]==1){OW_par12_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par12_new,],k=1)}
+    else if(mix_ind_par12_subset1[i]==2){OW_par12_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par12_new,],k=1)}
+    else if(mix_ind_par12_subset1[i]==3){OW_par12_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par12_new,],k=1)}
+    else if(mix_ind_par12_subset1[i]==4){OW_par12_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset1[i]==5){OW_par12_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset1[i]==6){OW_par12_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par12_new,],k=1)}
+    else if(mix_ind_par12_subset1[i]==7){OW_par12_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset1[i]==8){OW_par12_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset1[i]==9){OW_par12_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par12_new,],k=1)}
+    else if(mix_ind_par12_subset1[i]==10){OW_par12_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset1[i]==11){OW_par12_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset1[i]==12){OW_par12_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par12_new,],k=1)}
+    else if(mix_ind_par12_subset1[i]==13){OW_par12_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset1[i]==14){OW_par12_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset1[i]==15){OW_par12_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par12_new,],newdata_sigma=out_sample_sigma[ind_subset1_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset1[i]==16){OW_par12_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par12_new,],newdata_sigma =out_sample_sigma[ind_subset1_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset1[i]==17){OW_par12_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par12_new,],2,40,k=1)}
+    else{OW_par12_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par12_new,],out_sample[ind_subset1_par12_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par12_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par12_new[[D]][2])))+1
+  OW_par12_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par12_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par12_subset2[i]==1){OW_par12_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par12_new,],k=1)}
+    else if(mix_ind_par12_subset2[i]==2){OW_par12_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par12_new,],k=1)}
+    else if(mix_ind_par12_subset2[i]==3){OW_par12_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par12_new,],k=1)}
+    else if(mix_ind_par12_subset2[i]==4){OW_par12_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset2[i]==5){OW_par12_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset2[i]==6){OW_par12_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par12_new,],k=1)}
+    else if(mix_ind_par12_subset2[i]==7){OW_par12_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset2[i]==8){OW_par12_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset2[i]==9){OW_par12_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par12_new,],k=1)}
+    else if(mix_ind_par12_subset2[i]==10){OW_par12_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset2[i]==11){OW_par12_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset2[i]==12){OW_par12_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par12_new,],k=1)}
+    else if(mix_ind_par12_subset2[i]==13){OW_par12_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset2[i]==14){OW_par12_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset2[i]==15){OW_par12_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par12_new,],newdata_sigma=out_sample_sigma[ind_subset2_par12_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par12_subset2[i]==16){OW_par12_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par12_new,],newdata_sigma =out_sample_sigma[ind_subset2_par12_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par12_subset2[i]==17){OW_par12_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par12_new,],2,40,k=1)}
+    else{OW_par12_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par12_new,],out_sample[ind_subset2_par12_new,],N_in,2,40,k=1)}
+  }
+  OW_par12_new_Var<-rbind(OW_par12_new_Var1,OW_par12_new_Var2)
+  
+  
+  ##Ensemble 13
+  
+  mix_ind_par13_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par13_new[[D]][1])))+1
+  OW_par13_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par13_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par13_subset1[i]==1){OW_par13_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par13_new,],k=1)}
+    else if(mix_ind_par13_subset1[i]==2){OW_par13_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par13_new,],k=1)}
+    else if(mix_ind_par13_subset1[i]==3){OW_par13_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par13_new,],k=1)}
+    else if(mix_ind_par13_subset1[i]==4){OW_par13_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset1[i]==5){OW_par13_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset1[i]==6){OW_par13_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par13_new,],k=1)}
+    else if(mix_ind_par13_subset1[i]==7){OW_par13_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset1[i]==8){OW_par13_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset1[i]==9){OW_par13_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par13_new,],k=1)}
+    else if(mix_ind_par13_subset1[i]==10){OW_par13_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset1[i]==11){OW_par13_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset1[i]==12){OW_par13_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par13_new,],k=1)}
+    else if(mix_ind_par13_subset1[i]==13){OW_par13_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset1[i]==14){OW_par13_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset1[i]==15){OW_par13_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par13_new,],newdata_sigma=out_sample_sigma[ind_subset1_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset1[i]==16){OW_par13_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par13_new,],newdata_sigma =out_sample_sigma[ind_subset1_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset1[i]==17){OW_par13_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par13_new,],2,40,k=1)}
+    else{OW_par13_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par13_new,],out_sample[ind_subset1_par13_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par13_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par13_new[[D]][2])))+1
+  OW_par13_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par13_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par13_subset2[i]==1){OW_par13_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par13_new,],k=1)}
+    else if(mix_ind_par13_subset2[i]==2){OW_par13_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par13_new,],k=1)}
+    else if(mix_ind_par13_subset2[i]==3){OW_par13_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par13_new,],k=1)}
+    else if(mix_ind_par13_subset2[i]==4){OW_par13_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset2[i]==5){OW_par13_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset2[i]==6){OW_par13_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par13_new,],k=1)}
+    else if(mix_ind_par13_subset2[i]==7){OW_par13_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset2[i]==8){OW_par13_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset2[i]==9){OW_par13_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par13_new,],k=1)}
+    else if(mix_ind_par13_subset2[i]==10){OW_par13_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset2[i]==11){OW_par13_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset2[i]==12){OW_par13_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par13_new,],k=1)}
+    else if(mix_ind_par13_subset2[i]==13){OW_par13_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset2[i]==14){OW_par13_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset2[i]==15){OW_par13_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par13_new,],newdata_sigma=out_sample_sigma[ind_subset2_par13_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par13_subset2[i]==16){OW_par13_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par13_new,],newdata_sigma =out_sample_sigma[ind_subset2_par13_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par13_subset2[i]==17){OW_par13_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par13_new,],2,40,k=1)}
+    else{OW_par13_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par13_new,],out_sample[ind_subset2_par13_new,],N_in,2,40,k=1)}
+  }
+  OW_par13_new_Var<-rbind(OW_par13_new_Var1,OW_par13_new_Var2)
+  
+  
+  ##Ensemble 14
+  
+  mix_ind_par14_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par14_new[[D]][1])))+1
+  OW_par14_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par14_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par14_subset1[i]==1){OW_par14_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par14_new,],k=1)}
+    else if(mix_ind_par14_subset1[i]==2){OW_par14_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par14_new,],k=1)}
+    else if(mix_ind_par14_subset1[i]==3){OW_par14_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par14_new,],k=1)}
+    else if(mix_ind_par14_subset1[i]==4){OW_par14_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset1[i]==5){OW_par14_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset1[i]==6){OW_par14_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par14_new,],k=1)}
+    else if(mix_ind_par14_subset1[i]==7){OW_par14_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset1[i]==8){OW_par14_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset1[i]==9){OW_par14_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par14_new,],k=1)}
+    else if(mix_ind_par14_subset1[i]==10){OW_par14_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset1[i]==11){OW_par14_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset1[i]==12){OW_par14_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par14_new,],k=1)}
+    else if(mix_ind_par14_subset1[i]==13){OW_par14_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset1[i]==14){OW_par14_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset1[i]==15){OW_par14_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par14_new,],newdata_sigma=out_sample_sigma[ind_subset1_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset1[i]==16){OW_par14_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par14_new,],newdata_sigma =out_sample_sigma[ind_subset1_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset1[i]==17){OW_par14_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par14_new,],2,40,k=1)}
+    else{OW_par14_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par14_new,],out_sample[ind_subset1_par14_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par14_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par14_new[[D]][2])))+1
+  OW_par14_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par14_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par14_subset2[i]==1){OW_par14_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par14_new,],k=1)}
+    else if(mix_ind_par14_subset2[i]==2){OW_par14_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par14_new,],k=1)}
+    else if(mix_ind_par14_subset2[i]==3){OW_par14_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par14_new,],k=1)}
+    else if(mix_ind_par14_subset2[i]==4){OW_par14_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset2[i]==5){OW_par14_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset2[i]==6){OW_par14_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par14_new,],k=1)}
+    else if(mix_ind_par14_subset2[i]==7){OW_par14_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset2[i]==8){OW_par14_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset2[i]==9){OW_par14_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par14_new,],k=1)}
+    else if(mix_ind_par14_subset2[i]==10){OW_par14_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset2[i]==11){OW_par14_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset2[i]==12){OW_par14_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par14_new,],k=1)}
+    else if(mix_ind_par14_subset2[i]==13){OW_par14_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset2[i]==14){OW_par14_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset2[i]==15){OW_par14_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par14_new,],newdata_sigma=out_sample_sigma[ind_subset2_par14_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par14_subset2[i]==16){OW_par14_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par14_new,],newdata_sigma =out_sample_sigma[ind_subset2_par14_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par14_subset2[i]==17){OW_par14_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par14_new,],2,40,k=1)}
+    else{OW_par14_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par14_new,],out_sample[ind_subset2_par14_new,],N_in,2,40,k=1)}
+  }
+  OW_par14_new_Var<-rbind(OW_par14_new_Var1,OW_par14_new_Var2)
+  
+  #par15
+  
+  mix_ind_par15_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par15_new[[D]][1])))+1
+  OW_par15_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par15_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par15_subset1[i]==1){OW_par15_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par15_new,],k=1)}
+    else if(mix_ind_par15_subset1[i]==2){OW_par15_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par15_new,],k=1)}
+    else if(mix_ind_par15_subset1[i]==3){OW_par15_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par15_new,],k=1)}
+    else if(mix_ind_par15_subset1[i]==4){OW_par15_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset1[i]==5){OW_par15_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset1[i]==6){OW_par15_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par15_new,],k=1)}
+    else if(mix_ind_par15_subset1[i]==7){OW_par15_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset1[i]==8){OW_par15_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset1[i]==9){OW_par15_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par15_new,],k=1)}
+    else if(mix_ind_par15_subset1[i]==10){OW_par15_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset1[i]==11){OW_par15_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset1[i]==12){OW_par15_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par15_new,],k=1)}
+    else if(mix_ind_par15_subset1[i]==13){OW_par15_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset1[i]==14){OW_par15_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset1[i]==15){OW_par15_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par15_new,],newdata_sigma=out_sample_sigma[ind_subset1_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset1[i]==16){OW_par15_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par15_new,],newdata_sigma =out_sample_sigma[ind_subset1_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset1[i]==17){OW_par15_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par15_new,],2,40,k=1)}
+    else{OW_par15_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par15_new,],out_sample[ind_subset1_par15_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  
+  
+  mix_ind_par15_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par15_new[[D]][2])))+1
+  OW_par15_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par15_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par15_subset2[i]==1){OW_par15_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par15_new,],k=1)}
+    else if(mix_ind_par15_subset2[i]==2){OW_par15_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par15_new,],k=1)}
+    else if(mix_ind_par15_subset2[i]==3){OW_par15_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par15_new,],k=1)}
+    else if(mix_ind_par15_subset2[i]==4){OW_par15_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset2[i]==5){OW_par15_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset2[i]==6){OW_par15_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par15_new,],k=1)}
+    else if(mix_ind_par15_subset2[i]==7){OW_par15_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset2[i]==8){OW_par15_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset2[i]==9){OW_par15_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par15_new,],k=1)}
+    else if(mix_ind_par15_subset2[i]==10){OW_par15_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset2[i]==11){OW_par15_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset2[i]==12){OW_par15_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par15_new,],k=1)}
+    else if(mix_ind_par15_subset2[i]==13){OW_par15_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset2[i]==14){OW_par15_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset2[i]==15){OW_par15_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par15_new,],newdata_sigma=out_sample_sigma[ind_subset2_par15_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par15_subset2[i]==16){OW_par15_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par15_new,],newdata_sigma =out_sample_sigma[ind_subset2_par15_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par15_subset2[i]==17){OW_par15_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par15_new,],2,40,k=1)}
+    else{OW_par15_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par15_new,],out_sample[ind_subset2_par15_new,],N_in,2,40,k=1)}
+  }
+  OW_par15_new_Var<-rbind(OW_par15_new_Var1,OW_par15_new_Var2)
+  
+  
+  #par16
+  
+  mix_ind_par16_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par16_new[[D]][1])))+1
+  OW_par16_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par16_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par16_subset1[i]==1){OW_par16_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par16_new,],k=1)}
+    else if(mix_ind_par16_subset1[i]==2){OW_par16_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par16_new,],k=1)}
+    else if(mix_ind_par16_subset1[i]==3){OW_par16_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par16_new,],k=1)}
+    else if(mix_ind_par16_subset1[i]==4){OW_par16_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset1[i]==5){OW_par16_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset1[i]==6){OW_par16_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par16_new,],k=1)}
+    else if(mix_ind_par16_subset1[i]==7){OW_par16_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset1[i]==8){OW_par16_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset1[i]==9){OW_par16_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par16_new,],k=1)}
+    else if(mix_ind_par16_subset1[i]==10){OW_par16_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset1[i]==11){OW_par16_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset1[i]==12){OW_par16_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par16_new,],k=1)}
+    else if(mix_ind_par16_subset1[i]==13){OW_par16_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset1[i]==14){OW_par16_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset1[i]==15){OW_par16_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par16_new,],newdata_sigma=out_sample_sigma[ind_subset1_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset1[i]==16){OW_par16_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par16_new,],newdata_sigma =out_sample_sigma[ind_subset1_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset1[i]==17){OW_par16_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par16_new,],2,40,k=1)}
+    else{OW_par16_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par16_new,],out_sample[ind_subset1_par16_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par16_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par16_new[[D]][2])))+1
+  OW_par16_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par16_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par16_subset2[i]==1){OW_par16_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par16_new,],k=1)}
+    else if(mix_ind_par16_subset2[i]==2){OW_par16_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par16_new,],k=1)}
+    else if(mix_ind_par16_subset2[i]==3){OW_par16_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par16_new,],k=1)}
+    else if(mix_ind_par16_subset2[i]==4){OW_par16_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset2[i]==5){OW_par16_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset2[i]==6){OW_par16_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par16_new,],k=1)}
+    else if(mix_ind_par16_subset2[i]==7){OW_par16_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset2[i]==8){OW_par16_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset2[i]==9){OW_par16_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par16_new,],k=1)}
+    else if(mix_ind_par16_subset2[i]==10){OW_par16_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset2[i]==11){OW_par16_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset2[i]==12){OW_par16_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par16_new,],k=1)}
+    else if(mix_ind_par16_subset2[i]==13){OW_par16_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset2[i]==14){OW_par16_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset2[i]==15){OW_par16_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par16_new,],newdata_sigma=out_sample_sigma[ind_subset2_par16_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par16_subset2[i]==16){OW_par16_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par16_new,],newdata_sigma =out_sample_sigma[ind_subset2_par16_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par16_subset2[i]==17){OW_par16_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par16_new,],2,40,k=1)}
+    else{OW_par16_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par16_new,],out_sample[ind_subset2_par16_new,],N_in,2,40,k=1)}
+  }
+  OW_par16_new_Var<-rbind(OW_par16_new_Var1,OW_par16_new_Var2)
+  
+  
+  #par17
+  
+  mix_ind_par17_subset1<-findInterval(U,cumsum(unlist(model_weights_simul_par17_new[[D]][1])))+1
+  OW_par17_new_Var1<-matrix(NA,nrow=nrow(out_sample[ind_subset1_par17_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par17_subset1[i]==1){OW_par17_new_Var1[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset1_par17_new,],k=1)}
+    else if(mix_ind_par17_subset1[i]==2){OW_par17_new_Var1[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset1_par17_new,],k=1)}
+    else if(mix_ind_par17_subset1[i]==3){OW_par17_new_Var1[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset1_par17_new,],k=1)}
+    else if(mix_ind_par17_subset1[i]==4){OW_par17_new_Var1[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset1_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset1[i]==5){OW_par17_new_Var1[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset1_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset1[i]==6){OW_par17_new_Var1[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset1_par17_new,],k=1)}
+    else if(mix_ind_par17_subset1[i]==7){OW_par17_new_Var1[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset1_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset1[i]==8){OW_par17_new_Var1[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset1_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset1[i]==9){OW_par17_new_Var1[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset1_par17_new,],k=1)}
+    else if(mix_ind_par17_subset1[i]==10){OW_par17_new_Var1[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset1_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset1[i]==11){OW_par17_new_Var1[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset1_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset1[i]==12){OW_par17_new_Var1[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset1_par17_new,],k=1)}
+    else if(mix_ind_par17_subset1[i]==13){OW_par17_new_Var1[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset1_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset1[i]==14){OW_par17_new_Var1[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset1_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset1[i]==15){OW_par17_new_Var1[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset1_par17_new,],newdata_sigma=out_sample_sigma[ind_subset1_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset1[i]==16){OW_par17_new_Var1[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset1_par17_new,],newdata_sigma =out_sample_sigma[ind_subset1_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset1[i]==17){OW_par17_new_Var1[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset1_par17_new,],2,40,k=1)}
+    else{OW_par17_new_Var1[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset1_par17_new,],out_sample[ind_subset1_par17_new,],N_in,2,40,k=1)}
+  }
+  
+  
+  mix_ind_par17_subset2<-findInterval(U,cumsum(unlist(model_weights_simul_par17_new[[D]][2])))+1
+  OW_par17_new_Var2<-matrix(NA,nrow=nrow(out_sample[ind_subset2_par17_new,]),ncol=1000)
+  for (i in 1:1000){
+    if(mix_ind_par17_subset2[i]==1){OW_par17_new_Var2[,i]<-simulate_ODP(ODP_GLM_in,newdata=out_sample[ind_subset2_par17_new,],k=1)}
+    else if(mix_ind_par17_subset2[i]==2){OW_par17_new_Var2[,i]<-simulate_ZAGA(ZAGA_in,newdata=out_sample[ind_subset2_par17_new,],k=1)}
+    else if(mix_ind_par17_subset2[i]==3){OW_par17_new_Var2[,i]<-simulate_ZALN(LN_in,newdata=out_sample[ind_subset2_par17_new,],k=1)}
+    else if(mix_ind_par17_subset2[i]==4){OW_par17_new_Var2[,i]<-simulate_GA(Ga_optimTau,newdata=out_sample[ind_subset2_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset2[i]==5){OW_par17_new_Var2[,i]<-simulate_LN(LN_optimTau,newdata=out_sample[ind_subset2_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset2[i]==6){OW_par17_new_Var2[,i]<-simulate_ODP(glm_ODP_Ho_In,newdata=out_sample_Ho[ind_subset2_par17_new,],k=1)}
+    else if(mix_ind_par17_subset2[i]==7){OW_par17_new_Var2[,i]<-simulate_GA(glm_Ga_Ho_In,newdata=out_sample_Ho[ind_subset2_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset2[i]==8){OW_par17_new_Var2[,i]<-simulate_LN(glm_LN_Ho_In,newdata=out_sample_Ho[ind_subset2_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset2[i]==9){OW_par17_new_Var2[,i]<-simulate_ODP(glm_ODP_Cal_In,out_sample[ind_subset2_par17_new,],k=1)}
+    else if(mix_ind_par17_subset2[i]==10){OW_par17_new_Var2[,i]<-simulate_GA(glm_Ga_Cal_In,out_sample[ind_subset2_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset2[i]==11){OW_par17_new_Var2[,i]<-simulate_LN(glm_LN_Cal_In,out_sample[ind_subset2_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset2[i]==12){OW_par17_new_Var2[,i]<-simulate_NO(sp_Normal_In,newdata=out_sample_numeric[ind_subset2_par17_new,],k=1)}
+    else if(mix_ind_par17_subset2[i]==13){OW_par17_new_Var2[,i]<-simulate_GA(sp_Gamma_In,out_sample_numeric[ind_subset2_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset2[i]==14){OW_par17_new_Var2[,i]<-simulate_LN(sp_LN_In,out_sample_numeric[ind_subset2_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset2[i]==15){OW_par17_new_Var2[,i]<-simulate_GAGamlss(gamlss2_GA_In,newdata_mu=out_sample_mu[ind_subset2_par17_new,],newdata_sigma=out_sample_sigma[ind_subset2_par17_new,],k=1,tau=tau_Ga)}
+    else if(mix_ind_par17_subset2[i]==16){OW_par17_new_Var2[,i]<-simulate_LNGamlss(gamlss2_LN_In,newdata_mu=out_sample_mu[ind_subset2_par17_new,],newdata_sigma =out_sample_sigma[ind_subset2_par17_new,],k=1,tau=tau_LN)}
+    else if(mix_ind_par17_subset2[i]==17){OW_par17_new_Var2[,i]<-simulate_PPCI(fit_ODP_ppci_In,N_in,out_sample[ind_subset2_par17_new,],2,40,k=1)}
+    else{OW_par17_new_Var2[,i]<-simulate_PPCF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out[ind_subset2_par17_new,],out_sample[ind_subset2_par17_new,],N_in,2,40,k=1)}
+  }
+  OW_par17_new_Var<-rbind(OW_par17_new_Var1,OW_par17_new_Var2)
+  
+  
+  
+  
  
   
   
@@ -1030,6 +1501,15 @@ for (D in 1:ntri){
   reserve_par6_newSimulScheme[,D]<-apply(OW_par6_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
   reserve_par7_newSimulScheme[,D]<-apply(OW_par7_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
   reserve_par8_newSimulScheme[,D]<-apply(OW_par8_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par9_newSimulScheme[,D]<-apply(OW_par9_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par10_newSimulScheme[,D]<-apply(OW_par10_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par11_newSimulScheme[,D]<-apply(OW_par11_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par12_newSimulScheme[,D]<-apply(OW_par12_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par13_newSimulScheme[,D]<-apply(OW_par13_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par14_newSimulScheme[,D]<-apply(OW_par14_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par15_newSimulScheme[,D]<-apply(OW_par15_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par16_newSimulScheme[,D]<-apply(OW_par16_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
+  reserve_par17_newSimulScheme[,D]<-apply(OW_par17_new_Var,FUN=function(x) sum(x*10000),MARGIN=2)
   
 
   ##Equally Weighted Ensemble and BMV
@@ -1037,3 +1517,33 @@ for (D in 1:ntri){
   reserve_BMV_newSimulScheme[,D]<-apply(BMV_var1,FUN=function(x) sum(x*10000),MARGIN=2)
   
 }
+
+##Reserve Bias
+
+EW_reserve<-mean((apply(reserve_par1_newEW[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+BMV_reserve<-mean((apply(reserve_par1_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+
+
+par1_reserve<-mean((apply(reserve_par1_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+
+par2_reserve<-mean((apply(reserve_par2_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par3_reserve<-mean((apply(reserve_par3_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par4_reserve<-mean((apply(reserve_par4_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par5_reserve<-mean((apply(reserve_par5_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par6_reserve<-mean((apply(reserve_par6_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par7_reserve<-mean((apply(reserve_par7_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par8_reserve<-mean((apply(reserve_par8_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par9_reserve<-mean((apply(reserve_par9_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par10_reserve<-mean((apply(reserve_par10_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par11_reserve<-mean((apply(reserve_par11_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par12_reserve<-mean((apply(reserve_par12_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par13_reserve<-mean((apply(reserve_par13_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par14_reserve<-mean((apply(reserve_par14_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par15_reserve<-mean((apply(reserve_par15_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par16_reserve<-mean((apply(reserve_par16_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par17_reserve<-mean((apply(reserve_par17_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+par0_reserve<-mean((apply(reserve_par0_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
+
+
+reserve_bias75_comparison<-c(par0_reserve,par1_reserve,par2_reserve,par3_reserve,-0.021037,par5_reserve,par6_reserve,par7_reserve,par8_reserve,par9_reserve,par10_reserve,par11_reserve,par12_reserve,par13_reserve,par14_reserve,par15_reserve,par16_reserve,par17_reserve)
+
