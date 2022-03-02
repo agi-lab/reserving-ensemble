@@ -1,6 +1,6 @@
 # reserving-ensemble
 
-The code is written for the paper "Stochastic Ensemble Loss Reserving", with the following authors: Yanfeng Li, Benjamin Avanzi, Bernard Wong, Alan Xian.
+The code is written for the paper "Stochastic Ensemble Loss Reserving", with the following authors: Benjamin Avanzi, Yanfeng Li, Bernard Wong, Alan Xian.
 
 The scripts for reserving ensembles can produce the standard linear pool ensemble and the Accident Development periods dependent on Linear Pools (ADLP) ensembles tailored to the general insurance loss data. 
 The ensemble's performance can also be evaluated by running the Statistical Tests file. 
