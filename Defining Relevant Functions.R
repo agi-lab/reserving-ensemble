@@ -35,14 +35,7 @@ MM_optim<-function(w_init,dat,testdat,nIters){
 
 
 
-#create a ODP density function
-dODP<-function(y,lambda,phi) {
-  x<-y/phi
-  lambda2<-lambda/phi
-  if (phi>1e-6){
-    exp(-lambda2)*lambda2^x/(phi*factorial(x))}
-  else{dpois(round(y,0),lambda)}
-}
+
 #Create density function for ZALN
 dZALN<-Zadj.d(family="LOGNO")
 
