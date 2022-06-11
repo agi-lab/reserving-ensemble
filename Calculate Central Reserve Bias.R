@@ -57,7 +57,9 @@ ind_subset2_par17_new<-as.numeric(as.character(out_sample$origin))>=5&as.numeric
 ind_subset1_par18_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=14
 ind_subset2_par18_new<-as.numeric(as.character(out_sample$origin))>=15&as.numeric(as.character(out_sample$origin))<=40
 
-
+load("out_mu_list")
+load('true_reserve')
+out_mu_list<-out_mu_list_par1
 # SLP
 ntri<-70
 mu_OW_par0<-matrix(NA,nrow=780,ncol=ntri)
@@ -72,6 +74,7 @@ res_OW_par0<-apply(mu_OW_par0,MARGIN=2,FUN=sum)
 res_bias_par0<-abs((res_OW_par0-true_reserve[1:ntri])/true_reserve[1:ntri])
 
 #Equally Weighted
+
 mu_OW_EW<-matrix(NA,nrow=780,ncol=ntri)
 for (i in 1:ntri){
   mu_OW_EW[,i]<-as.matrix(out_mu_list[[i]][,-c(19,20)])%*%c(rep(1/18,18))
@@ -392,3 +395,4 @@ res_bias_par18<-abs((res_OW_par18_new-true_reserve[1:ntri])/true_reserve[1:ntri]
 
 rb_central_comparision_ADLP<-cbind(res_bias_par0,res_bias_par1,res_bias_par2,res_bias_par3,res_bias_par4,res_bias_par5,res_bias_par6,res_bias_par7,res_bias_par8,res_bias_par9,res_bias_par10,res_bias_par11,res_bias_par12,res_bias_par13,res_bias_par14,res_bias_par15,res_bias_par16,res_bias_par18)
 
+save(rb_central_comparision_ADLP,file="Central Relative Bias")

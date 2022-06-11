@@ -1,11 +1,11 @@
 
 OW_out_dens_par0<-matrix(NA,nrow=780,ncol=ntri)
 model_weights_simul_par0<-list()
-
+w_init_1_3<-rep(1/18,18)
 ##Caculate the Density of the Optimized Ensemble 
 for (D in 1:ntri){
   meta_dens_augvalid<-valid_dens_list[[D]][,-21]
-  meta_dens_out<-out_dens_list[[D]][,-21]
+  meta_dens_out<-out_dens_list[[D]][,-c(21,22)]
   
   #Train the model weights using the MM Algorithm
   mat_valid<-as.matrix(meta_dens_augvalid[,3:ncol(meta_dens_augvalid)])

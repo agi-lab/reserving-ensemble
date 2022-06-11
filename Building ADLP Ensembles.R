@@ -899,8 +899,8 @@ for (D in 1:ntri){
 
 #Calculate (out-of-sample) Log Score by Accident periods
 
-origin<-as.numeric(as.character(out_sample$origin))
-dev<-as.numeric(as.character(out_sample$dev))
+origin<-as.numeric(as.character(out_dens_list[[1]]$origin))
+dev<-as.numeric(as.character(out_dens_list[[1]]$dev))
 
 
 OW_out_LS_par0_dat<-as.data.frame(cbind(origin,dev,OW_out_dens_par0))

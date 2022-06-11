@@ -2,7 +2,14 @@
 ntri<-100
 
 
-
+count_by_origin
+function(data,start,end){
+  cbo<-c()
+  for (i in start:end){
+    cbo[i]<-nrow(data[data$origin==i,]) 
+  }
+  return(cbo)
+}
 
 
 #Writing the Minorization-Maximization Algorithm
@@ -35,10 +42,17 @@ MM_optim<-function(w_init,dat,testdat,nIters){
 
 
 
-
+#create a ODP density function
+dODP<-function(y,lambda,phi) {
+  x<-y/phi
+  lambda2<-lambda/phi
+  if (phi>1e-6){
+    exp(-lambda2)*lambda2^x/(phi*factorial(x))}
+  else{dpois(round(y,0),lambda)}
+}
 #Create density function for ZALN
 dZALN<-Zadj.d(family="LOGNO")
-
+pZALN<-Zadj.p(family="LOGNO")
 
 
 #Create functions that calculate the predictive density for each component model
