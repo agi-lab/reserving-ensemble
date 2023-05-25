@@ -16,29 +16,29 @@
 #out_sample_numeric$Calendar=as.numeric(as.character(out_sample$Calendar))
 
 
-ntri<-100
-SpLN_crps<-matrix(NA,nrow=780,ncol=ntri)
-EqEns_crps<-matrix(NA,nrow=780,ncol=ntri)
+#ntri<-100
+SpLN_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+EqEns_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 
-SLP_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP8_crps<-matrix(NA,nrow=780,ncol=ntri)
+SLP_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP8_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 
-ADLP1_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP2_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP3_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP4_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP5_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP6_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP7_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP9_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP10_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP11_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP12_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP13_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP14_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP15_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP16_crps<-matrix(NA,nrow=780,ncol=ntri)
-ADLP17_crps<-matrix(NA,nrow=780,ncol=ntri)
+ADLP1_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP2_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP3_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP4_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP5_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP6_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP7_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP9_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP10_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP11_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP12_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP13_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP14_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP15_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP16_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+ADLP17_crps<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 
 for (D in 1:ntri){
   
@@ -791,28 +791,28 @@ for (D in 1:ntri){
   
 }  
 
-save(SpLN_crps,file="SpLN_crps")
-save(EqEns_crps,file="SpLN_crps")
-
-save(SLP_crps,file="SpLN_crps")
-save(ADLP8_crps,file="SpLN_crps")
-
-save(ADLP1_crps,file="SpLN_crps")
-save(ADLP2_crps,file="SpLN_crps")
-save(ADLP3_crps,file="SpLN_crps")
-save(ADLP4_crps,file="SpLN_crps")
-save(ADLP5_crps,file="SpLN_crps")
-save(ADLP6_crps,file="SpLN_crps")
-save(ADLP7_crps,file="SpLN_crps")
-save(ADLP9_crps,file="SpLN_crps")
-save(ADLP10_crps,file="SpLN_crps")
-save(ADLP11_crps,file="SpLN_crps")
-save(ADLP12_crps,file="SpLN_crps")
-save(ADLP13_crps,file="SpLN_crps")
-save(ADLP14_crps,file="SpLN_crps")
-save(ADLP15_crps,file="SpLN_crps")
-save(ADLP16_crps,file="SpLN_crps")
-save(ADLP17_crps,file="SpLN_crps")
+# save(SpLN_crps,file="SpLN_crps")
+# save(EqEns_crps,file="SpLN_crps")
+# 
+# save(SLP_crps,file="SpLN_crps")
+# save(ADLP8_crps,file="SpLN_crps")
+# 
+# save(ADLP1_crps,file="SpLN_crps")
+# save(ADLP2_crps,file="SpLN_crps")
+# save(ADLP3_crps,file="SpLN_crps")
+# save(ADLP4_crps,file="SpLN_crps")
+# save(ADLP5_crps,file="SpLN_crps")
+# save(ADLP6_crps,file="SpLN_crps")
+# save(ADLP7_crps,file="SpLN_crps")
+# save(ADLP9_crps,file="SpLN_crps")
+# save(ADLP10_crps,file="SpLN_crps")
+# save(ADLP11_crps,file="SpLN_crps")
+# save(ADLP12_crps,file="SpLN_crps")
+# save(ADLP13_crps,file="SpLN_crps")
+# save(ADLP14_crps,file="SpLN_crps")
+# save(ADLP15_crps,file="SpLN_crps")
+# save(ADLP16_crps,file="SpLN_crps")
+# save(ADLP17_crps,file="SpLN_crps")
 
 
 mean(apply(SpLN_crps,MARGIN=2,FUN=mean))

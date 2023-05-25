@@ -2,8 +2,7 @@
 ntri<-100
 
 
-count_by_origin
-function(data,start,end){
+count_by_origin <- function(data,start,end){
   cbo<-c()
   for (i in start:end){
     cbo[i]<-nrow(data[data$origin==i,]) 
@@ -44,15 +43,15 @@ MM_optim<-function(w_init,dat,testdat,nIters){
 
 #create a ODP density function
 dODP<-function(y,lambda,phi) {
-  x<-y/phi
-  lambda2<-lambda/phi
-  if (phi>1e-6){
-    exp(-lambda2)*lambda2^x/(phi*factorial(x))}
-  else{dpois(round(y,0),lambda)}
+  x<-floor(y/phi)
+  lambda2<-floor(lambda/phi)
+  dpois(x,lambda2)/phi
 }
 #Create density function for ZALN
 dZALN<-Zadj.d(family="LOGNO")
 pZALN<-Zadj.p(family="LOGNO")
+
+
 
 
 #Create functions that calculate the predictive density for each component model
@@ -63,8 +62,9 @@ cal_dens_ODP<-function(model,newdata){
   pred_ODP_mu<-pred_ODP$fit
   pred_ODP_phi<-(pred_ODP$residual.scale)^2
   y<-newdata$value
-  return(dtweedie(y,mu=pred_ODP_mu,phi=pred_ODP_phi,power=1))
+  return(dODP(y,lambda=pred_ODP_mu,phi=pred_ODP_phi))
 }
+
 ##Calculate Gamma density from Gamma GLM
 cal_dens_GA<-function(model,tau,newdata){
   pred_mu<-predict(model,what="mu",newdata=newdata,type="response")
@@ -111,7 +111,7 @@ cal_dens_PPCI<-function(model,N,newdata,index_start,index_end){
   dens<-c()
   for (i in 1:nrow(newdata)){
     phi<-(pred_ODP$residual.scale)^2*(N_rep_valid[i])^2
-    dens[i]<-dtweedie(y=y[i],mu=mu[i],phi=phi,power=1)
+    dens[i]<-dtweedie(y=y[i],mu=mu[i],phi=phi,power=1)/phi
   }
   return(dens)
 }
@@ -135,7 +135,7 @@ cal_PPCF_dens<-function(model_subCount,model_subPayments,train_cumF,newdataFC,ne
   
   dens_PPCF<-c()
   for (i in 1:nrow(newdata_Pay)){
-    ds<-dtweedie(y=y[i],mu=mu[i],phi=phi[i],power=1)
+    ds<-dtweedie(y=y[i],mu=mu[i],phi=phi[i],power=1)/phi[i]
     dens_PPCF[i]<-ds
   }
   dens_PPCF[dens_PPCF==0]=min(dens_PPCF[dens_PPCF!=0])
@@ -251,3 +251,288 @@ cal_mu_LN_Gamlss<-function(model,tau,newdata_mu,newdata_sigma){
   return(mean)
 }
 
+
+
+
+
+
+
+
+
+# Create function that calculate the CDF values -------------------------------------------------------------------------
+
+#create a ODP CDF function
+pODP<-function(y,lambda,phi) {
+  x<-floor(y/phi)
+  lambda2<-floor(lambda/phi)
+  ppois(x,lambda2)/phi
+}
+
+pODP_pre <-function(y,lambda,phi) {
+  x <- floor(y/phi)-1
+  lambda2<-floor(lambda/phi)
+  ppois(x,lambda2)/phi
+}
+
+
+
+#Create CDF function for ZALN
+dZALN<-Zadj.d(family="LOGNO")
+pZALN<-Zadj.p(family="LOGNO")
+
+
+
+
+#Create functions that calculate the predictive CDF for each component model
+
+##Calculate ODP CDF from ODP GLM
+cal_CDF_ODP<-function(model,newdata){
+  pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
+  pred_ODP_mu<-pred_ODP$fit
+  pred_ODP_phi<-(pred_ODP$residual.scale)^2
+  y<-newdata$value
+  return(pODP(y,lambda=pred_ODP_mu,phi=pred_ODP_phi))
+}
+
+cal_CDF_ODP_pre <- function(model,newdata){
+  pred_ODP <- predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
+  pred_ODP_mu <- pred_ODP$fit
+  pred_ODP_phi <- (pred_ODP$residual.scale)^2
+  y<-newdata$value
+  return(pODP_pre(y,lambda=pred_ODP_mu,phi=pred_ODP_phi))
+}
+
+
+
+##Calculate Gamma CDF from Gamma GLM
+cal_CDF_GA<-function(model,tau,newdata){
+  pred_mu<-predict(model,what="mu",newdata=newdata,type="response")
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pGA(q=newdata$value+tau,mu=pred_mu,sigma=pred_sigma))
+}
+
+##Calculate Log-Normal CDF from Log-Normal GLM
+cal_CDF_LN<-function(model,tau,newdata){
+  pred_mu<-predict(model,what="mu",newdata=newdata,type="response")
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pLNO(q=newdata$value+tau,mu=pred_mu,sigma=pred_sigma))
+}
+##Calculate ZAGA CDF from ZAGA GLM
+cal_CDF_ZAGA<-function(model,newdata){
+  newdata_nu<-newdata
+  newdata_nu$dev=as.numeric(as.character(newdata$dev))
+  pred_mu<-predict(model,what="mu",newdata=newdata,type="response")
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  pred_nu<-predict(model,what="nu",newdata=newdata_nu,type="response")
+  return(pZAGA(q=newdata$value,mu=pred_mu,sigma=pred_sigma,nu=pred_nu))
+}
+
+##Calculate ZALN CDF from ZALN GLM
+cal_CDF_ZALN<-function(model,newdata){
+  newdata_nu<-newdata
+  newdata_nu$dev=as.numeric(as.character(newdata$dev))
+  pred_mu<-predict(model,parameter="mu",newdata=newdata,type="response")
+  pred_sigma<-predict(model,parameter="sigma",newdata=newdata,type="response")
+  pred_nu<-predict(model,parameter="xi0",newdata=newdata_nu,type="response")
+  return(pZALN(q=newdata$value,mu=pred_mu,sigma=pred_sigma,xi0=pred_nu))
+}
+##Calculate Normal CDF from Normal GLM
+cal_CDF_Normal<-function(model, newdata){
+  pred_mu<-predict(model,what="mu",newdata=newdata,type="response")
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pNO(q=newdata$value,mu=pred_mu,sigma=pred_sigma))
+}
+##Calculate ODP CDF from PPCI model
+
+cal_CDF_PPCI_pre<-function(model,N,newdata,index_start,index_end){
+  N_rep_valid<-rep(N[index_start:index_end],times=count_by_origin(newdata,index_start,index_end)[index_start:index_end])
+  pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
+  mu<-pred_ODP$fit*N_rep_valid
+  y<-newdata$value
+  CDF<-c()
+  for (i in 1:nrow(newdata)){
+    phi<-(pred_ODP$residual.scale)^2*(N_rep_valid[i])^2
+    CDF[i]<-ptweedie(q=y[i]-1,mu=mu[i],phi=phi,power=1)/phi
+  }
+  return(CDF)
+}
+
+
+cal_CDF_PPCI<-function(model,N,newdata,index_start,index_end){
+  N_rep_valid<-rep(N[index_start:index_end],times=count_by_origin(newdata,index_start,index_end)[index_start:index_end])
+  pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
+  mu<-pred_ODP$fit*N_rep_valid
+  y<-newdata$value
+  CDF<-c()
+  for (i in 1:nrow(newdata)){
+    phi<-(pred_ODP$residual.scale)^2*(N_rep_valid[i])^2
+    CDF[i]<-ptweedie(q=y[i],mu=mu[i],phi=phi,power=1)/phi
+  }
+  return(CDF)
+}
+##Calculate ODP CDF from PPCF GLM
+cal_PPCF_CDF_pre<-function(model_subCount,model_subPayments,train_cumF,newdataFC,newdata_Pay,N,index_start,index_end){
+  N_rep_valid<-rep(N[index_start:index_end],times=count_by_origin(newdata_Pay,index_start,index_end)[index_start:index_end])
+  pred_F<-predict(odp_FC,newdata=newdataFC,type="response")
+  pred_F_cum<-list()
+  for(i in index_start:index_end){
+    pf<-predict(odp_FC,newdata=newdataFC[newdataFC$origin==i,],type="response")
+    pf_cum<-round(cumsum(c(train_cumF[train_cumF$origin==i,]$value[nrow(train_cumF[train_cumF$origin==i,])],pf))[-1],0)
+    pred_F_cum[[i]]<-pf_cum
+  }
+  pred_F_cum<-as.vector(unlist(pred_F_cum[index_start:index_end]))
+  
+  pred_OT<-pred_F_cum/N_rep_valid
+  pred_payment<-predict.glm(model_subPayments,newdata=data.frame(OT=pred_OT),type="response",se.fit=TRUE)
+  mu<-pred_payment$fit*pred_F
+  phi<-(pred_payment$residual.scale)^2*(pred_F)^2
+  y<-newdata_Pay$value
+  
+  CDF_PPCF<-c()
+  for (i in 1:nrow(newdata_Pay)){
+    ds<-ptweedie(q=y[i]-1,mu=mu[i],phi=phi[i],power=1)/phi[i]
+    CDF_PPCF[i]<-ds
+  }
+  CDF_PPCF[CDF_PPCF==0]=min(CDF_PPCF[CDF_PPCF!=0])
+  #assign a small number to the zero CDF in order to prevent -Inf Log Score
+  return(CDF_PPCF)
+}
+
+
+cal_PPCF_CDF<-function(model_subCount,model_subPayments,train_cumF,newdataFC,newdata_Pay,N,index_start,index_end){
+  N_rep_valid<-rep(N[index_start:index_end],times=count_by_origin(newdata_Pay,index_start,index_end)[index_start:index_end])
+  pred_F<-predict(odp_FC,newdata=newdataFC,type="response")
+  pred_F_cum<-list()
+  for(i in index_start:index_end){
+    pf<-predict(odp_FC,newdata=newdataFC[newdataFC$origin==i,],type="response")
+    pf_cum<-round(cumsum(c(train_cumF[train_cumF$origin==i,]$value[nrow(train_cumF[train_cumF$origin==i,])],pf))[-1],0)
+    pred_F_cum[[i]]<-pf_cum
+  }
+  pred_F_cum<-as.vector(unlist(pred_F_cum[index_start:index_end]))
+  
+  pred_OT<-pred_F_cum/N_rep_valid
+  pred_payment<-predict.glm(model_subPayments,newdata=data.frame(OT=pred_OT),type="response",se.fit=TRUE)
+  mu<-pred_payment$fit*pred_F
+  phi<-(pred_payment$residual.scale)^2*(pred_F)^2
+  y<-newdata_Pay$value
+  
+  CDF_PPCF<-c()
+  for (i in 1:nrow(newdata_Pay)){
+    ds<-ptweedie(q=y[i],mu=mu[i],phi=phi[i],power=1)/phi[i]
+    CDF_PPCF[i]<-ds
+  }
+  CDF_PPCF[CDF_PPCF==0]=min(CDF_PPCF[CDF_PPCF!=0])
+  #assign a small number to the zero CDF in order to prevent -Inf Log Score
+  return(CDF_PPCF)
+}
+
+##Calculate Log-Normal CDF for Log-Normal GAMLSS
+cal_CDF_LN_Gamlss<-function(model,tau,newdata_mu,newdata_sigma){
+  pred_mu<-predict(model,what="mu",newdata=newdata_mu,type="response")
+  pred_sigma<-predict(model,what="sigma",newdata=newdata_sigma,type="response")
+  return(pLNO(q=newdata_mu$value+tau,mu=pred_mu,sigma=pred_sigma))
+}
+
+##Calculate Gamma CDF for Gamma GAMLSS
+cal_CDF_GA_Gamlss<-function(model,tau,newdata_mu,newdata_sigma){
+  pred_mu<-predict(model,what="mu",newdata=newdata_mu,type="response")
+  pred_sigma<-predict(model,what="sigma",newdata=newdata_sigma,type="response")
+  return(pGA(q=newdata_mu$value+tau,mu=pred_mu,sigma=pred_sigma))
+}
+
+
+
+# Create function that calcualte the predicted variance:
+
+#Create functions that calculate the predictive mean for each component model
+
+#Create functions that calculate the predictive mean for each component model
+
+##Calculate ODP mean for ODP GLM
+cal_sigma_ODP<-function(model,newdata){
+  pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
+  pred_ODP_mu<-pred_ODP$fit
+  pred_ODP_phi<-(pred_ODP$residual.scale)^2
+  pred_ODP_sigma<-pred_ODP_phi*pred_ODP_mu
+  return(pred_ODP_sigma)
+}
+##Calculate GA mean for GA GLM
+cal_sigma_GA<-function(model,tau,newdata){
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pred_sigma)
+}
+
+##Calculate LN mean for LN GLM
+cal_sigma_LN<-function(model,tau,newdata){
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pred_sigma)
+}
+
+##Calculate ZAGA mean for ZAGA GLM
+cal_sigma_ZAGA<-function(model,newdata){
+  newdata_nu<-newdata
+  newdata_nu$dev=as.numeric(as.character(newdata$dev))
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pred_sigma)
+}
+
+##Calculate ZALN mean for ZALN GLM
+cal_sigma_ZALN<-function(model,newdata){
+  newdata_nu<-newdata
+  newdata_nu$dev=as.numeric(as.character(newdata$dev))
+  pred_sigma <- predict(model,parameter="sigma",newdata=newdata,type="response")
+  return(pred_sigma)
+}
+
+##Calculate Normal mean for Normal GLM
+cal_sigma_Normal<-function(model, newdata){
+  pred_sigma<-predict(model,what="sigma",newdata=newdata,type="response")
+  return(pred_sigma)
+}
+
+##Calculate ODP mean for PPCI model
+cal_sigma_PPCI<-function(model,N,newdata,index_start,index_end){
+  N_rep_valid<-rep(N[index_start:index_end],times=count_by_origin(newdata,index_start,index_end)[index_start:index_end])
+  pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
+  mu<-pred_ODP$fit*N_rep_valid
+  y<-newdata$value
+  sigma<-c()
+  for (i in 1:nrow(newdata)){
+    sigma[i]<-(pred_ODP$residual.scale)^2*(N_rep_valid[i])^2*mu[i]
+    
+  }
+  return(sigma)
+}
+
+##Calculate ODP mean for PPCF model
+##Calculate ODP CDF from PPCF GLM
+cal_PPCF_sigma<-function(model_subCount,model_subPayments,train_cumF,newdataFC,newdata_Pay,N,index_start,index_end){
+  N_rep_valid<-rep(N[index_start:index_end],times=count_by_origin(newdata_Pay,index_start,index_end)[index_start:index_end])
+  pred_F<-predict(odp_FC,newdata=newdataFC,type="response")
+  pred_F_cum<-list()
+  for(i in index_start:index_end){
+    pf<-predict(odp_FC,newdata=newdataFC[newdataFC$origin==i,],type="response")
+    pf_cum<-round(cumsum(c(train_cumF[train_cumF$origin==i,]$value[nrow(train_cumF[train_cumF$origin==i,])],pf))[-1],0)
+    pred_F_cum[[i]]<-pf_cum
+  }
+  pred_F_cum<-as.vector(unlist(pred_F_cum[index_start:index_end]))
+  
+  pred_OT<-pred_F_cum/N_rep_valid
+  pred_payment<-predict.glm(model_subPayments,newdata=data.frame(OT=pred_OT),type="response",se.fit=TRUE)
+  mu<-pred_payment$fit*pred_F
+  phi<-(pred_payment$residual.scale)^2*(pred_F)^2
+  return(phi*mu)
+}
+
+##Calculate GA mean for GA GAMLSS
+
+cal_sigma_GA_Gamlss<-function(model,tau,newdata_sigma){
+  pred_sigma<-predict(model,what="sigma",newdata=newdata_sigma,type="response")
+  return(pred_sigma)
+}
+
+##Calculate LN mean for LN GAMLSS
+cal_sigma_LN_Gamlss<-function(model,tau,newdata_sigma){
+  pred_sigma<-predict(model,what="sigma",newdata=newdata_sigma,type="response")
+  return(pred_sigma)
+}

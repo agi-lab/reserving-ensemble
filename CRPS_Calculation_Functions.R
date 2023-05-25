@@ -1,4 +1,4 @@
-z_u<-2*round(max(out_sample$value),0)
+z_u <- 2*round(max(out_sample$value),0)
 z_l<-0
 z<-z_l:z_u
 N<-length(z_u:z_l)
@@ -427,19 +427,19 @@ cal_CRPS_ADLPensemble<-function(w1,w2,z,index_subset1,index_subset2,newdata,tau_
 
 ####################Some examples of CRPS calculation
 
-crps_LN<-cal_crps_LN(z,sp_LN_In,out_sample_numeric)
-
-#Mean CRPS for Equally Weighted ensemble
-mean(cal_CRPS_ensemble(w=rep(1/18,18),z=z,newdata=out_sample,ODPGLM=ODP_GLM_in,GAGLM=Ga_optimTau,LNGLM=LN_optimTau,ZAGA=ZAGA_in,ZALN=LN_in,ODPHo=glm_ODP_Ho_In,GaHo=glm_Ga_Ho_In,LNHo=glm_LN_Ho_In,ODPCal=glm_ODP_Cal_In,GaCAL=glm_Ga_Cal_In,LNCAL=glm_LN_Cal_In,NoSp=sp_Normal_In,GaSp=sp_Gamma_In,LNSp=sp_LN_In,GaGAMLSS=gamlss2_GA_In,LNGAMLSS=gamlss2_LN_In,PPCI=fit_ODP_ppci_In,NO_PPCI=N_in,index_start=2,index_end=40,odp_FC=odp_FC_In,model_subPayments=ODP_PPCF_In,train_cumF=cum_F_dt,newdataFC=FUN_dat_Out,newdata_Pay=out_sample,NO_PPCF=N_in))
-
-#Mean CRPS for SLP
-mean(cal_CRPS_ensemble(w=model_weights_simul_par0[[100]],z=z,newdata=out_sample,ODPGLM=ODP_GLM_in,GAGLM=Ga_optimTau,LNGLM=LN_optimTau,ZAGA=ZAGA_in,ZALN=LN_in,ODPHo=glm_ODP_Ho_In,GaHo=glm_Ga_Ho_In,LNHo=glm_LN_Ho_In,ODPCal=glm_ODP_Cal_In,GaCAL=glm_Ga_Cal_In,LNCAL=glm_LN_Cal_In,NoSp=sp_Normal_In,GaSp=sp_Gamma_In,LNSp=sp_LN_In,GaGAMLSS=gamlss2_GA_In,LNGAMLSS=gamlss2_LN_In,PPCI=fit_ODP_ppci_In,NO_PPCI=N_in,index_start=2,index_end=40,odp_FC=odp_FC_In,model_subPayments=ODP_PPCF_In,train_cumF=cum_F_dt,newdataFC=FUN_dat_Out,newdata_Pay=out_sample,NO_PPCF=N_in))
-
-#Mean CRPS for ADLP8
-ind_subset1_par7_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=15
-ind_subset2_par7_new<-as.numeric(as.character(out_sample$origin))>=16&as.numeric(as.character(out_sample$origin))<=40
-crps_ADLP8<-cal_CRPS_ADLPensemble(w1=as.vector(unlist(model_weights_simul_par7_new[[100]][1])),w2=as.vector(unlist(model_weights_simul_par7_new[[100]][2])),tau_Ga=tau_Ga,tau_LN=tau_LN,index_subset1=ind_subset1_par7_new,index_subset2=ind_subset2_par7_new,z=z,newdata=out_sample,ODPGLM=ODP_GLM_in,GAGLM=Ga_optimTau,LNGLM=LN_optimTau,ZAGA=ZAGA_in,ZALN=LN_in,ODPHo=glm_ODP_Ho_In,GaHo=glm_Ga_Ho_In,LNHo=glm_LN_Ho_In,ODPCal=glm_ODP_Cal_In,GaCAL=glm_Ga_Cal_In,LNCAL=glm_LN_Cal_In,NoSp=sp_Normal_In,GaSp=sp_Gamma_In,LNSp=sp_LN_In,GaGAMLSS=gamlss2_GA_In,LNGAMLSS=gamlss2_LN_In,PPCI=fit_ODP_ppci_In,NO_PPCI=N_in,index_start=2,index_end=40,odp_FC=odp_FC_In,model_subPayments=ODP_PPCF_In,train_cumF=cum_F_dt,newdataFC=FUN_dat_Out,newdata_Pay=out_sample,NO_PPCF=N_in)
-mean(crps_ADLP8)
+# crps_LN<-cal_crps_LN(z,sp_LN_In,out_sample_numeric)
+# 
+# #Mean CRPS for Equally Weighted ensemble
+# mean(cal_CRPS_ensemble(w=rep(1/18,18),z=z,newdata=out_sample,ODPGLM=ODP_GLM_in,GAGLM=Ga_optimTau,LNGLM=LN_optimTau,ZAGA=ZAGA_in,ZALN=LN_in,ODPHo=glm_ODP_Ho_In,GaHo=glm_Ga_Ho_In,LNHo=glm_LN_Ho_In,ODPCal=glm_ODP_Cal_In,GaCAL=glm_Ga_Cal_In,LNCAL=glm_LN_Cal_In,NoSp=sp_Normal_In,GaSp=sp_Gamma_In,LNSp=sp_LN_In,GaGAMLSS=gamlss2_GA_In,LNGAMLSS=gamlss2_LN_In,PPCI=fit_ODP_ppci_In,NO_PPCI=N_in,index_start=2,index_end=40,odp_FC=odp_FC_In,model_subPayments=ODP_PPCF_In,train_cumF=cum_F_dt,newdataFC=FUN_dat_Out,newdata_Pay=out_sample,NO_PPCF=N_in))
+# 
+# #Mean CRPS for SLP
+# mean(cal_CRPS_ensemble(w=model_weights_simul_par0[[100]],z=z,newdata=out_sample,ODPGLM=ODP_GLM_in,GAGLM=Ga_optimTau,LNGLM=LN_optimTau,ZAGA=ZAGA_in,ZALN=LN_in,ODPHo=glm_ODP_Ho_In,GaHo=glm_Ga_Ho_In,LNHo=glm_LN_Ho_In,ODPCal=glm_ODP_Cal_In,GaCAL=glm_Ga_Cal_In,LNCAL=glm_LN_Cal_In,NoSp=sp_Normal_In,GaSp=sp_Gamma_In,LNSp=sp_LN_In,GaGAMLSS=gamlss2_GA_In,LNGAMLSS=gamlss2_LN_In,PPCI=fit_ODP_ppci_In,NO_PPCI=N_in,index_start=2,index_end=40,odp_FC=odp_FC_In,model_subPayments=ODP_PPCF_In,train_cumF=cum_F_dt,newdataFC=FUN_dat_Out,newdata_Pay=out_sample,NO_PPCF=N_in))
+# 
+# #Mean CRPS for ADLP8
+# ind_subset1_par7_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=15
+# ind_subset2_par7_new<-as.numeric(as.character(out_sample$origin))>=16&as.numeric(as.character(out_sample$origin))<=40
+# crps_ADLP8<-cal_CRPS_ADLPensemble(w1=as.vector(unlist(model_weights_simul_par7_new[[100]][1])),w2=as.vector(unlist(model_weights_simul_par7_new[[100]][2])),tau_Ga=tau_Ga,tau_LN=tau_LN,index_subset1=ind_subset1_par7_new,index_subset2=ind_subset2_par7_new,z=z,newdata=out_sample,ODPGLM=ODP_GLM_in,GAGLM=Ga_optimTau,LNGLM=LN_optimTau,ZAGA=ZAGA_in,ZALN=LN_in,ODPHo=glm_ODP_Ho_In,GaHo=glm_Ga_Ho_In,LNHo=glm_LN_Ho_In,ODPCal=glm_ODP_Cal_In,GaCAL=glm_Ga_Cal_In,LNCAL=glm_LN_Cal_In,NoSp=sp_Normal_In,GaSp=sp_Gamma_In,LNSp=sp_LN_In,GaGAMLSS=gamlss2_GA_In,LNGAMLSS=gamlss2_LN_In,PPCI=fit_ODP_ppci_In,NO_PPCI=N_in,index_start=2,index_end=40,odp_FC=odp_FC_In,model_subPayments=ODP_PPCF_In,train_cumF=cum_F_dt,newdataFC=FUN_dat_Out,newdata_Pay=out_sample,NO_PPCF=N_in)
+# mean(crps_ADLP8)
 
 #plot(x=out_sample$value,y=SpLN_crps[,2])
 #points(x=out_sample$value,y=ADLP8_crps[,2],col="blue")

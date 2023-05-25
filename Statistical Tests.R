@@ -1,12 +1,14 @@
-load("index_bestvalid")
-load("out_dens_list_par1")
-out_dens_list<-out_dens_list_par1
-ntri<-100
-EW_LS<-matrix(NA,nrow=780,ncol=ntri)
+# load("index_bestvalid")
+# load("out_dens_list_par1")
+
+#out_dens_list<-out_dens_list_par1
+#ntri<-100
+
+EW_LS<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 for(i in 1:ntri){
   EW_LS[,i]<-log(out_dens_list[[i]][,21])
 }
-BMV_LS<-matrix(NA,nrow=780,ncol=ntri)
+BMV_LS<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 for(i in 1:ntri){
   BMV_LS[,i]<-log(out_dens_list[[i]][,index_best_validmod2[i]+2])
 }
@@ -334,6 +336,5 @@ for(i in 1:ntri){
   ###fd_0[i]/nrow(log(OW_out_dens_par8_new)) provides an estimation of the variance of mean log score differential
 }
 mean(tn_8_spec_EqEns_crps[tn_8_spec_EqEns_crps>=0]>qnorm(0.975))
-
 
 

@@ -7,10 +7,9 @@ if (!require("SynthETIC")) install.packages("SynthETIC")
 if (!require("gamlss.inf")) install.packages("gamlss.inf")
 if (!require("gamlss")) install.packages("gamlss")
 if (!require("ChainLadder")) install.packages("ChainLadder")
-#install.packages("ChainLadder")
 if (!require("ggplot2")) install.packages("ggplot2")
-install.packages("tweedie")
-
+if(!require("tweedie")) install.packages("tweedie")
+if(!require("coda")) install.packages("coda")
 
 
 ###Loading the required packages

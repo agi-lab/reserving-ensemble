@@ -5,7 +5,7 @@ simulate_ODP<-function(model,newdata,k){
   pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
   pred_ODP_mu<-pred_ODP$fit
   pred_ODP_phi<-(pred_ODP$residual.scale)^2
-  simy<-replicate(k, rtweedie(length(pred_ODP_mu), xi=1,mu=pred_ODP_mu,phi=pred_ODP_phi))
+  simy<-replicate(k,rtweedie(length(pred_ODP_mu),xi=1,mu=pred_ODP_mu,phi=pred_ODP_phi))
   return(simy)
   # replicate the simulations process k times; the ODP distribution corresponding to tweedie distribution with power=1
 }
@@ -102,30 +102,30 @@ simulate_PPCF<-function(model_subCount,model_subPayments,train_cumF,newdataFC,ne
   return(simy)
 }
 
-reserve_par1_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par2_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par3_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par4_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par5_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par6_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par7_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par8_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par9_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par10_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par11_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par12_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par13_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par14_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par15_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par16_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par17_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
+reserve_par1_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par2_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par3_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par4_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par5_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par6_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par7_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par8_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par9_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par10_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par11_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par12_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par13_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par14_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par15_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par16_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par17_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
 
 
 ##Equally Weighted Ensemble and BMV
-reserve_BMV_newSimulScheme<-matrix(NA,nrow=1000,ncol=20)
-reserve_par1_newEW<-matrix(NA,nrow=1000,ncol=20)
+reserve_BMV_newSimulScheme<-matrix(NA,nrow=1000,ncol=10)
+reserve_par1_newEW<-matrix(NA,nrow=1000,ncol=10)
 
-for (D in 1:20){
+for (D in 1:10){
   
   set.seed(20200130+D)
   U<-runif(1000)
@@ -1518,6 +1518,8 @@ for (D in 1:20){
   
 }
 
+#load("true_reserve")
+
 ##Reserve Bias
 
 EW_reserve<-mean((apply(reserve_par1_newEW[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
@@ -1545,5 +1547,7 @@ par17_reserve<-mean((apply(reserve_par17_newSimulScheme[,1:10],FUN=function(x) q
 par0_reserve<-mean((apply(reserve_par0_newSimulScheme[,1:10],FUN=function(x) quantile(x,0.75,na.rm=TRUE),MARGIN=2)-quantile(true_reserve,0.75))/quantile(true_reserve,0.75),na.rm=TRUE)
 
 
-reserve_bias75_comparison<-c(par0_reserve,par1_reserve,par2_reserve,par3_reserve,-0.021037,par5_reserve,par6_reserve,par7_reserve,par8_reserve,par9_reserve,par10_reserve,par11_reserve,par12_reserve,par13_reserve,par14_reserve,par15_reserve,par16_reserve,par17_reserve)
+#reserve_bias75_comparison<-c(par0_reserve,par1_reserve,par2_reserve,par3_reserve,-0.021037,par5_reserve,par6_reserve,par7_reserve,par8_reserve,par9_reserve,par10_reserve,par11_reserve,par12_reserve,par13_reserve,par14_reserve,par15_reserve,par16_reserve,par17_reserve)
+reserve_bias75_comparison<-c(par0_reserve,par1_reserve,par2_reserve,par3_reserve,par4_reserve,par5_reserve,par6_reserve,par7_reserve,par8_reserve,par9_reserve,par10_reserve,par11_reserve,par12_reserve,par13_reserve,par14_reserve,par15_reserve,par16_reserve,par17_reserve)
 
+#save(reserve_bias75_comparison,file="Mean 75 Reserve bias")

@@ -20,8 +20,8 @@ ind_subset2_par6_new<-as.numeric(as.character(out_sample$origin))>=20&as.numeric
 ind_subset1_par7_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=15
 ind_subset2_par7_new<-as.numeric(as.character(out_sample$origin))>=16&as.numeric(as.character(out_sample$origin))<=40
 
-ind_subset1_par16_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=13
-ind_subset2_par16_new<-as.numeric(as.character(out_sample$origin))>=14&as.numeric(as.character(out_sample$origin))<=40
+ind_subset1_par8_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=13
+ind_subset2_par8_new<-as.numeric(as.character(out_sample$origin))>=14&as.numeric(as.character(out_sample$origin))<=40
 
 
 ind_subset1_par9_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=11
@@ -57,12 +57,15 @@ ind_subset2_par17_new<-as.numeric(as.character(out_sample$origin))>=5&as.numeric
 ind_subset1_par18_new<-as.numeric(as.character(out_sample$origin))>=2&as.numeric(as.character(out_sample$origin))<=14
 ind_subset2_par18_new<-as.numeric(as.character(out_sample$origin))>=15&as.numeric(as.character(out_sample$origin))<=40
 
-load("out_mu_list")
-load('true_reserve')
-out_mu_list<-out_mu_list_par1
+#load("out_mu_list")
+#load('true_reserve')
+
+#out_mu_list <- out_mu_list_par1
 # SLP
-ntri<-70
-mu_OW_par0<-matrix(NA,nrow=780,ncol=ntri)
+#ntri<-70
+true_reserve <- apply(future_claims, MARGIN = 2, FUN = sum)
+  
+mu_OW_par0<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 
 
 for (i in 1:ntri){
@@ -75,7 +78,7 @@ res_bias_par0<-abs((res_OW_par0-true_reserve[1:ntri])/true_reserve[1:ntri])
 
 #Equally Weighted
 
-mu_OW_EW<-matrix(NA,nrow=780,ncol=ntri)
+mu_OW_EW<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 for (i in 1:ntri){
   mu_OW_EW[,i]<-as.matrix(out_mu_list[[i]][,-c(19,20)])%*%c(rep(1/18,18))
 }
@@ -85,14 +88,15 @@ res_OW_EW<-apply(mu_OW_EW,MARGIN=2,FUN=sum)
 res_bias_EW<-abs((res_OW_EW-true_reserve[1:ntri])/true_reserve[1:ntri])
 
 #BMV
-mu_OW_BMV<-matrix(NA,nrow=780,ncol=ntri)
+mu_OW_BMV<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
 for (i in 1:ntri){
-  mu_OW_BMV[,i]<-out_mu_list[[i]][,14]
+  mu_OW_BMV[,i]<-out_mu_list[[i]][, index_best_validmod2[i]]
 }
 
 res_OW_BMV<-apply(mu_OW_BMV,MARGIN=2,FUN=sum)
-res_bias_BMV<-abs((res_OW_BMV-true_reserve[1:ntri])/true_reserve[1:ntri])
+res_bias_BMV <- abs((res_OW_BMV-true_reserve[1:ntri])/true_reserve[1:ntri])
 mean(res_bias_BMV[28:37])
+
 #Partition Strategy 1
 mu_OW_out1_par1_new<-matrix(NA,nrow=sum(ind_subset1_par1_new),ncol=ntri)
 mu_OW_out2_par1_new<-matrix(NA,nrow=sum(ind_subset2_par1_new),ncol=ntri)
@@ -102,7 +106,7 @@ for (i in 1:ntri){
 }
 
 for (i in 1:ntri){
-  mu_OW_out2_par1_new[,i]<-as.matrix(out_mu_list_par1[[i]][ind_subset2_par1_new,-c(19,20)])%*%as.vector(unlist(model_weights_simul_par1_new[[i]][2]))
+  mu_OW_out2_par1_new[,i]<-as.matrix(out_mu_list[[i]][ind_subset2_par1_new,-c(19,20)])%*%as.vector(unlist(model_weights_simul_par1_new[[i]][2]))
 }
 res_OW_par1_new<-apply(rbind(mu_OW_out1_par1_new,mu_OW_out2_par1_new),MARGIN=2,FUN=sum)
 res_bias_par1<-abs((res_OW_par1_new-true_reserve[1:ntri])/true_reserve[1:ntri])
@@ -393,6 +397,6 @@ res_bias_par18<-abs((res_OW_par18_new-true_reserve[1:ntri])/true_reserve[1:ntri]
 
 #Create a vector that contains all reserve bias
 
-rb_central_comparision_ADLP<-cbind(res_bias_par0,res_bias_par1,res_bias_par2,res_bias_par3,res_bias_par4,res_bias_par5,res_bias_par6,res_bias_par7,res_bias_par8,res_bias_par9,res_bias_par10,res_bias_par11,res_bias_par12,res_bias_par13,res_bias_par14,res_bias_par15,res_bias_par16,res_bias_par18)
+rb_central_comparision_ADLP <- cbind(res_bias_par0,res_bias_par1,res_bias_par2,res_bias_par3,res_bias_par4,res_bias_par5,res_bias_par6,res_bias_par7,res_bias_par8,res_bias_par9,res_bias_par10,res_bias_par11,res_bias_par12,res_bias_par13,res_bias_par14,res_bias_par15,res_bias_par16,res_bias_par18)
 
-save(rb_central_comparision_ADLP,file="Central Relative Bias")
+#save(rb_central_comparision_ADLP,file="Central Relative Bias")

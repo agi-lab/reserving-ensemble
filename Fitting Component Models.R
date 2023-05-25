@@ -1,4 +1,4 @@
-
+#ntri <- 100
 index_best_validmod2<-c()
 valid_dens_list<-list()
 out_dens_list<-list()
@@ -6,11 +6,12 @@ out_mu_list<-list()
 valid_mu_list<-list()
 model_weights_simul<-list()
 future_claims<-matrix(NA,nrow=780,ncol=ntri)
-
+out_CDF_list <- list()
+valid_CDF_list <- list()
 
 
 for (D in 1:ntri){
-  
+  #D<-1
   set.seed(20200130+D)
   # Package-wise global parameters
   set_parameters(ref_claim = 200000, time_unit = 1/4)
@@ -192,7 +193,10 @@ for (D in 1:ntri){
   full_dat$origin=as.factor(full_dat$origin)
   full_dat$dev=as.factor(full_dat$dev)
   in_sample<-full_dat[full_dat$Calendar<=41,]
+  in_sample<-in_sample[order(as.numeric(as.character(in_sample$origin))),]
   out_sample<-full_dat[full_dat$Calendar>41,]
+  out_sample<-out_sample[order(as.numeric(as.character(out_sample$origin))),]
+  
   
   tri_withInflation<-as.triangle(agg_tri_withInflation)
   
@@ -256,6 +260,7 @@ for (D in 1:ntri){
   gamma_1_train<-gamlss(formula=value~factor(origin)+factor(dev),nu.formula=~as.numeric(as.character(dev)),data=train,family=ZAGA(mu.link="log",sigma.link = "log", nu.link = "logit"))
   #ZALN
   LN_1_train<-gamlssZadj(y=value,mu.formula = ~factor(origin)+factor(dev),xi0.formula=~as.numeric(as.character(dev)),data=train,family=LOGNO(mu.link="identity",sigma.link="log"))
+  
   tau_LN<-5
   tau_Ga<-5
   #Gamma 
@@ -267,6 +272,13 @@ for (D in 1:ntri){
   dens_LNGLM2<-cal_dens_LN(LN_optimTau_train,tau_LN,aug_valid)
   dens_ZAGA2<-cal_dens_ZAGA(gamma_1_train,aug_valid)
   dens_ZALN2<-cal_dens_ZALN(LN_1_train,aug_valid)
+  
+  ##Calculate CDF
+  CDF_ODPGLM2<-cal_CDF_ODP(ODP_GLM_train,aug_valid)
+  CDF_GAGLM2<-cal_CDF_GA(Ga_optimTau_train,tau_Ga,aug_valid)
+  CDF_LNGLM2<-cal_CDF_LN(LN_optimTau_train,tau_LN,aug_valid)
+  CDF_ZAGA2<-cal_CDF_ZAGA(gamma_1_train,aug_valid)
+  CDF_ZALN2<-cal_CDF_ZALN(LN_1_train,aug_valid)
   
   train_new<-train
   train_new$origin=as.numeric(as.character(train$origin))
@@ -290,6 +302,11 @@ for (D in 1:ntri){
   dens_GaHo2<-cal_dens_GA(glm_Ga_Ho_tr1,tau_Ga,aug_valid_Ho)
   dens_LNHo2<-cal_dens_LN(glm_LN_Ho_tr1,tau_LN,aug_valid_Ho)
   
+  #Calculate CDF
+  CDF_ODPHo2<-cal_CDF_ODP(glm_ODP_Ho_tr1,aug_valid_Ho)
+  CDF_GaHo2<-cal_CDF_GA(glm_Ga_Ho_tr1,tau_Ga,aug_valid_Ho)
+  CDF_LNHo2<-cal_CDF_LN(glm_LN_Ho_tr1,tau_LN,aug_valid_Ho)
+  
   ####With Calendar Periods
   #Under ODP Assumption
   glm_ODP_Cal_tr1<-glm(formula=value~factor(dev)+Calendar,family=quasipoisson(link="log"),data=train)
@@ -302,6 +319,11 @@ for (D in 1:ntri){
   dens_GaCal2<-cal_dens_GA(glm_Ga_Cal_tr1,tau_Ga,aug_valid)
   dens_LNCal2<-cal_dens_LN(glm_LN_Cal_tr1,tau_LN,aug_valid)
   
+  #Calculate CDF
+  CDF_ODPCal2<-cal_CDF_ODP(glm_ODP_Cal_tr1,aug_valid)
+  CDF_GaCal2<-cal_CDF_GA(glm_Ga_Cal_tr1,tau_Ga,aug_valid)
+  CDF_LNCal2<-cal_CDF_LN(glm_LN_Cal_tr1,tau_LN,aug_valid)
+  
   ####Smoothing Spline
   sp_Normal2<-gamlss(formula=value~scs(origin)+scs(dev),data=train_new,family=NO(),trace=FALSE)
   sp_Gamma2<-gamlss(formula=(value+tau_Ga)~scs(origin)+scs(dev),data=train_new,family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
@@ -312,19 +334,25 @@ for (D in 1:ntri){
   dens_SpGamma2<-cal_dens_GA(sp_Gamma2,tau_Ga,aug_valid_numeric)
   dens_SpLN2<-cal_dens_LN(sp_LN2,tau_LN,aug_valid_numeric)
   
+  #CDF
+  CDF_SpNormal2<-cal_CDF_Normal(sp_Normal2,aug_valid_numeric)
+  CDF_SpGamma2<-cal_CDF_GA(sp_Gamma2,tau_Ga,aug_valid_numeric)
+  CDF_SpLN2<-cal_CDF_LN(sp_LN2,tau_LN,aug_valid_numeric)
   ####GAMLSS
   #GAMLSS 2: Smooth Effects on the predictor for sigma term
-  gamlss2_GA<-gamlss(formula=(value+tau_Ga)~factor(origin)+factor(dev),data=train,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-  gamlss2_LN<-gamlss(formula=(value+tau_Ga)~factor(origin)+factor(dev),data=train,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+  gamlss2_GA<-gamlss(formula=(value+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train_new,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+  
+  gamlss2_LN<-gamlss(formula=(value+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train_new,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+  
   #Density for GAMLSS
   aug_valid_mu<-aug_valid
   aug_valid_sigma<-aug_valid_numeric
-  dens_GaGAMLSS2<-cal_dens_GA_Gamlss(gamlss2_GA,tau_Ga,aug_valid_mu,aug_valid_sigma)
-  dens_LNGAMLSS2<-cal_dens_LN_Gamlss(gamlss2_LN,tau_LN,aug_valid_mu,aug_valid_sigma)
+  dens_GaGAMLSS2<-cal_dens_GA_Gamlss(gamlss2_GA,tau_Ga,aug_valid_numeric,aug_valid_numeric)
+  dens_LNGAMLSS2<-cal_dens_LN_Gamlss(gamlss2_LN,tau_LN,aug_valid_numeric,aug_valid_numeric)
   
-  
-  
-  
+  #Calculate CDF
+  CDF_GaGAMLSS2<-cal_CDF_GA_Gamlss(gamlss2_GA,tau_Ga,aug_valid_numeric,aug_valid_numeric)
+  CDF_LNGAMLSS2<-cal_CDF_LN_Gamlss(gamlss2_LN,tau_LN,aug_valid_numeric,aug_valid_numeric)
   
   
   ##Mean for Basic Models
@@ -583,8 +611,15 @@ for (D in 1:ntri){
   ODP_PPCF_train<-glm(PPCF~OT,family=quasipoisson(link="log"),data=new_train_PPCF)
   #Density for PPCI and PPCF
   dens_PPCI2<-cal_dens_PPCI(fit_ODP_ppci,N,aug_valid,2,40)
+  
+  #CDF for PPCI
+  CDF_PPCI2<-cal_CDF_PPCI(fit_ODP_ppci,N,aug_valid,2,40)
+  
   aug_valid_FC$dev=as.factor(aug_valid_FC$dev)
-  dens_PPCF2<-cal_PPCF_dens(odp_FC,ODP_PPCF_train,train_cumF,aug_valid_FC,aug_valid,N,2,40) 
+  dens_PPCF2 <- cal_PPCF_dens(odp_FC,ODP_PPCF_train,train_cumF,aug_valid_FC,aug_valid,N,2,40) 
+  
+  #CDF for PPCF
+  CDF_PPCF2 <- cal_PPCF_CDF(odp_FC,ODP_PPCF_train,train_cumF,aug_valid_FC,aug_valid,N,2,40) 
   
   
   
@@ -636,9 +671,9 @@ for (D in 1:ntri){
   #Under Log-Normal Assumption
   glm_LN_Cal_In<-gamlss(formula=(value+tau_LN)~factor(dev)+Calendar,data=in_sample,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
   in_sample_numeric<-in_sample
-  in_sample_numeric$origin=as.numeric(in_sample$origin)
-  in_sample_numeric$dev=as.numeric(in_sample$dev)
-  in_sample_numeric$Calendar=as.numeric(in_sample$Calendar)
+  in_sample_numeric$origin=as.numeric(as.character(in_sample$origin))
+  in_sample_numeric$dev=as.numeric(as.character(in_sample$dev))
+  in_sample_numeric$Calendar=as.numeric(as.character(in_sample$Calendar))
   
   ###Smoothing Spline
   sp_Normal_In<-gamlss(formula=value~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=in_sample_numeric,family=NO(),trace=FALSE)
@@ -646,8 +681,15 @@ for (D in 1:ntri){
   sp_LN_In<-gamlss(formula=(value+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=in_sample_numeric,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
   
   ###GAMLSS
-  gamlss2_GA_In<-gamlss(formula=(value+tau_Ga)~factor(origin)+factor(dev),data=in_sample,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-  gamlss2_LN_In<-gamlss(formula=(value+tau_LN)~factor(origin)+factor(dev),data=in_sample,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+  gamlss2_GA_In<-gamlss(formula=(value+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=in_sample_numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+  gamlss2_LN_In<-gamlss(formula=(value+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=in_sample_numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+  
+  ##
+  #gamlss2_NO_In<-gamlss(formula=(value*100)~as.numeric(as.character(origin))+as.numeric(as.character(dev))+log(as.numeric(as.character(dev))),data=in_sample_numeric,sigma.formula=~as.numeric(as.character(dev)),family=NO(mu.link="identity",sigma.link="identity"),trace=FALSE)
+  
+  #gamlss2_GA_In_experiment<-gamlss(formula=(value+tau_Ga)~as.numeric(as.character(origin))+as.numeric(as.character(dev)),data=in_sample_numeric,sigma.formula=~1,family=GA(mu.link="identity", sigma.link ="identity"),trace=FALSE)
+  #glm_ga <- glm(formula=(value+tau_Ga)~as.numeric(as.character(origin))+as.numeric(as.character(dev)),data=in_sample_numeric,family=Gamma(link="identity"))
+  
   
   ###Predictive density for out-sample data
   out_sample<-out_sample[order(as.numeric(as.character(out_sample$origin))),]
@@ -680,11 +722,63 @@ for (D in 1:ntri){
   dens_SpLN_out_sample<-cal_dens_LN(sp_LN_In,tau_LN,out_sample_numeric)
   
   #Density for GAMLSS
-  out_sample_mu<-out_sample
-  out_sample_sigma<-out_sample_numeric
+  
   #Density for GAMLSS
-  dens_GaGAMLSS_out_sample<-cal_dens_GA_Gamlss(gamlss2_GA_In,tau_Ga,out_sample_mu,out_sample_sigma)
-  dens_LNGAMLSS_out_sample<-cal_dens_LN_Gamlss(gamlss2_LN_In,tau_LN,out_sample_mu,out_sample_sigma)
+  dens_GaGAMLSS_out_sample<-cal_dens_GA_Gamlss(gamlss2_GA_In,tau_Ga,out_sample_numeric,out_sample_numeric)
+  
+  dens_LNGAMLSS_out_sample<-cal_dens_LN_Gamlss(gamlss2_LN_In,tau_LN,out_sample_numeric,out_sample_numeric)
+  
+  #Generate predictive CDF-------------------------------------------------------------------------
+  ###Predictive CDFity for out-sample data
+  out_sample<-out_sample[order(as.numeric(as.character(out_sample$origin))),]
+  CDF_ODPGLM_out_sample_pre <- cal_CDF_ODP_pre(ODP_GLM_in,out_sample)
+  CDF_ODPGLM_out_sample <- cal_CDF_ODP(ODP_GLM_in,out_sample)
+  CDF_ODPGLM_out_sample_continuous <- (1-runif(n = length(CDF_ODPGLM_out_sample_pre), 0, 1))*CDF_ODPGLM_out_sample_pre+runif(n = length(CDF_ODPGLM_out_sample_pre), 0, 1)*CDF_ODPGLM_out_sample
+  
+  
+  CDF_GAGLM_out_sample<-cal_CDF_GA(Ga_optimTau,tau_Ga,out_sample)
+  CDF_LNGLM_out_sample<-cal_CDF_LN(LN_optimTau,tau_LN,out_sample)
+  CDF_ZAGA_out_sample<-cal_CDF_ZAGA(ZAGA_in,out_sample)
+  CDF_ZALN_out_sample<-cal_CDF_ZALN(LN_in,out_sample)
+  
+  out_sample_numeric<-out_sample
+  out_sample_numeric$origin=as.numeric(out_sample$origin)
+  out_sample_numeric$dev=as.numeric(out_sample$dev)
+  out_sample_numeric$Calendar=as.numeric(out_sample$Calendar)
+  
+  #CDFity for Hoerl curve
+  out_sample_Ho<-out_sample
+  out_sample_Ho$dev<-as.numeric(as.character(out_sample$dev))
+  CDF_ODPHo_out_sample_pre <- cal_CDF_ODP_pre(glm_ODP_Ho_In,out_sample_Ho)
+  CDF_ODPHo_out_sample <- cal_CDF_ODP(glm_ODP_Ho_In,out_sample_Ho)
+  CDF_ODPHo_out_sample_continuous <- (1-runif(n = length(CDF_ODPHo_out_sample_pre), 0, 1))*CDF_ODPHo_out_sample_pre+runif(n = length(CDF_ODPHo_out_sample_pre), 0, 1)*CDF_ODPHo_out_sample
+  
+  
+  CDF_GaHo_out_sample<-cal_CDF_GA(glm_Ga_Ho_In,tau_Ga,out_sample_Ho)
+  CDF_LNHo_out_sample<-cal_CDF_LN(glm_LN_Ho_In,tau_LN,out_sample_Ho)
+  
+  #CDFity for Calendar Periods
+  CDF_ODPCal_out_sample_pre <- cal_CDF_ODP_pre(glm_ODP_Cal_In,out_sample)
+  CDF_ODPCal_out_sample<-cal_CDF_ODP(glm_ODP_Cal_In,out_sample)
+  CDF_ODPCal_out_sample_continuous <- (1-runif(n = length(CDF_ODPCal_out_sample), 0, 1))*CDF_ODPCal_out_sample_pre+runif(n = length(CDF_ODPCal_out_sample), 0, 1)*CDF_ODPCal_out_sample
+  #hist(CDF_ODPCal_out_sample_continuous)
+  
+  CDF_GaCal_out_sample<-cal_CDF_GA(glm_Ga_Cal_In,tau_Ga,out_sample)
+  CDF_LNCal_out_sample<-cal_CDF_LN(glm_LN_Cal_In,tau_LN,out_sample)
+  
+  #CDFity for Smoothing Spline
+  CDF_SpNormal_out_sample<-cal_CDF_Normal(sp_Normal_In,out_sample_numeric)
+  CDF_SpGamma_out_sample<-cal_CDF_GA(sp_Gamma_In,tau_Ga,out_sample_numeric)
+  CDF_SpLN_out_sample<-cal_CDF_LN(sp_LN_In,tau_LN,out_sample_numeric)
+  
+  #CDFity for GAMLSS
+  
+  #CDFity for GAMLSS
+  CDF_GaGAMLSS_out_sample<-cal_CDF_GA_Gamlss(gamlss2_GA_In,tau_Ga,out_sample_numeric,out_sample_numeric)
+  
+  CDF_LNGAMLSS_out_sample<-cal_CDF_LN_Gamlss(gamlss2_LN_In,tau_LN,out_sample_numeric,out_sample_numeric)
+  
+  
   
   
   ##Mean for Basic Models
@@ -693,6 +787,13 @@ for (D in 1:ntri){
   mu_LNGLM_out_sample<-ifelse(cal_mu_LN(LN_optimTau,tau_LN,out_sample)>tau_LN,cal_mu_LN(LN_optimTau,tau_LN,out_sample)-tau_LN,0)
   mu_ZAGA_out_sample<-cal_mu_ZAGA(ZAGA_in,out_sample)
   mu_ZALN_out_sample<-cal_mu_ZALN(LN_in,out_sample)
+  
+  ## Variance for Basic models
+  sigma_ODPGLM_out_sample<-cal_sigma_ODP(ODP_GLM_in,out_sample)
+  sigma_GAGLM_out_sample<-cal_sigma_GA(Ga_optimTau,tau_Ga,out_sample)
+  sigma_LNGLM_out_sample<-cal_sigma_LN(LN_optimTau,tau_LN,out_sample)
+  sigma_ZAGA_out_sample<-cal_sigma_ZAGA(ZAGA_in,out_sample)
+  sigma_ZALN_out_sample<-cal_sigma_ZALN(LN_in,out_sample)
   
   
   #Mean for Hoerl curve
@@ -844,11 +945,22 @@ for (D in 1:ntri){
   ODP_PPCF_In<-glm(PPCF~OT,family=quasipoisson(link="log"),data=new_in_PPCF)
   
   
-  #Density for PPCI and PPCF
+  #Density AND CDF for PPCI and PPCF
   dens_PPCI_out_sample<-cal_dens_PPCI(fit_ODP_ppci_In,N_in,out_sample,2,40)
+  
+  CDF_PPCI_out_sample_pre <- cal_CDF_PPCI_pre(fit_ODP_ppci_In,N_in,out_sample,2,40)
+  CDF_PPCI_out_sample <- cal_CDF_PPCI(fit_ODP_ppci_In,N_in,out_sample,2,40)
+  CDF_PPCI_out_sample_continuous <- (1-runif(length(CDF_PPCI_out_sample),0,1))*CDF_PPCI_out_sample_pre+runif(length(CDF_PPCI_out_sample),0,1)*CDF_PPCI_out_sample
+  #hist(CDF_PPCI_out_sample_continuous)
+  
+  
   FUN_dat_Out$dev=as.factor(FUN_dat_Out$dev)
   dens_PPCF_out_sample<-cal_PPCF_dens(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out,out_sample,N_in,2,40)
   
+  CDF_PPCF_out_sample_pre <- cal_PPCF_CDF_pre(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out,out_sample,N_in,2,40)
+  CDF_PPCF_out_sample <- cal_PPCF_CDF(odp_FC_In,ODP_PPCF_In,cum_F_dt,FUN_dat_Out,out_sample,N_in,2,40)
+  CDF_PPCF_out_sample_continuous <- (1-runif(length(CDF_PPCF_out_sample), 0, 1))*CDF_PPCF_out_sample_pre+runif(length(CDF_PPCF_out_sample), 0, 1)*CDF_PPCF_out_sample
+  #hist(CDF_PPCF_out_sample_continuous)
   #Calculate Predictive Mean for Out-of-Sample Data
   
   
@@ -866,9 +978,15 @@ for (D in 1:ntri){
   dens_PPCF2[dens_PPCF2==0]=min(dens_PPCF2[dens_PPCF2!=0])
   
   meta_dens_augvalid<-data.frame(origin=aug_valid$origin,dev=aug_valid$dev,dens_ODP_GLM=dens_ODPGLM2,dens_GAGLM=dens_GAGLM2,dens_LNGLM=dens_LNGLM2,dens_ZAGA=dens_ZAGA2,dens_ZALN=dens_ZALN2,dens_ODPHo=dens_ODPHo2,dens_GaHo=dens_GaHo2,dens_LNHo=dens_LNHo2,dens_ODPCal=dens_ODPCal2,dens_GaCal=dens_GaCal2,dens_LNCal=dens_LNCal2,dens_SpNormal=dens_SpNormal2,dens_SpGamma=dens_SpGamma2,dens_SpLN=dens_SpLN2,dens_GaGAMLSS=dens_GaGAMLSS2,dens_LNGAMLSS=dens_LNGAMLSS2,dens_PPCI=dens_PPCI2,dens_PPCF=dens_PPCF2)
+  #Get the CDF
+  meta_CDF_augvalid <-data.frame(origin=aug_valid$origin,dev=aug_valid$dev,CDF_ODP_GLM=CDF_ODPGLM2,CDF_GAGLM=CDF_GAGLM2,CDF_LNGLM=CDF_LNGLM2,CDF_ZAGA=CDF_ZAGA2,CDF_ZALN=CDF_ZALN2,CDF_ODPHo=CDF_ODPHo2,CDF_GaHo=CDF_GaHo2,CDF_LNHo=CDF_LNHo2,CDF_ODPCal=CDF_ODPCal2,CDF_GaCal=CDF_GaCal2,CDF_LNCal=CDF_LNCal2,CDF_SpNormal=CDF_SpNormal2,CDF_SpGamma=CDF_SpGamma2,CDF_SpLN=CDF_SpLN2,CDF_GaGAMLSS=CDF_GaGAMLSS2,CDF_LNGAMLSS=CDF_LNGAMLSS2,CDF_PPCI=CDF_PPCI2,CDF_PPCF=CDF_PPCF2)
+  
+  
+  
   #Construct 2 Validation sets to train model weights
   #Valid1(contains predicted density from AC2 TO AC10),Valid2(AC11-30),Valid3(AC31-40)
   meta_dens_out<-data.frame(origin=out_sample$origin,dev=out_sample$dev,dens_ODP_GLM=dens_ODPGLM_out_sample,dens_GAGLM=dens_GAGLM_out_sample,dens_LNGLM=dens_LNGLM_out_sample,dens_ZAGA=dens_ZAGA_out_sample,dens_ZALN=dens_ZALN_out_sample,dens_ODPHo=dens_ODPHo_out_sample,dens_GaHo=dens_GaHo_out_sample,dens_LNHo=dens_LNHo_out_sample,dens_ODPCal=dens_ODPCal_out_sample,dens_GaCal=dens_GaCal_out_sample,dens_LNCal=dens_LNCal_out_sample,dens_SpNormal=dens_SpNormal_out_sample,dens_SpGamma=dens_SpGamma_out_sample,dens_SpLN=dens_SpLN_out_sample,dens_GaGAMLSS=dens_GaGAMLSS_out_sample,dens_LNGAMLSS=dens_LNGAMLSS_out_sample,dens_PPCI=dens_PPCI_out_sample,dens_PPCF=dens_PPCF_out_sample)
+  meta_CDF_out<-data.frame(origin=out_sample$origin,dev=out_sample$dev,CDF_ODP_GLM=CDF_ODPGLM_out_sample,CDF_GAGLM=CDF_GAGLM_out_sample,CDF_LNGLM=CDF_LNGLM_out_sample,CDF_ZAGA=CDF_ZAGA_out_sample,CDF_ZALN=CDF_ZALN_out_sample,CDF_ODPHo=CDF_ODPHo_out_sample,CDF_GaHo=CDF_GaHo_out_sample,CDF_LNHo=CDF_LNHo_out_sample,CDF_ODPCal=CDF_ODPCal_out_sample,CDF_GaCal=CDF_GaCal_out_sample,CDF_LNCal=CDF_LNCal_out_sample,CDF_SpNormal=CDF_SpNormal_out_sample,CDF_SpGamma=CDF_SpGamma_out_sample,CDF_SpLN=CDF_SpLN_out_sample,CDF_GaGAMLSS=CDF_GaGAMLSS_out_sample,CDF_LNGAMLSS=CDF_LNGAMLSS_out_sample,CDF_PPCI=CDF_PPCI_out_sample,CDF_PPCF=CDF_PPCF_out_sample)
   
 
   LogS_valid_IndEn2_new1<-log(meta_dens_augvalid[,-c(1,2)])
@@ -877,8 +995,13 @@ for (D in 1:ntri){
   
   w_init_1_3<-rep(1/18,18)
   #Calculate the density for equally weighted ensemble
+  
   dens_Eneq<-as.matrix(meta_dens_out[,-c(1,2)])%*%w_init_1_3
+  CDF_Eneq<-as.matrix(meta_CDF_out[,-c(1,2)])%*%w_init_1_3
+  
+  
   meta_dens_out_1_aug_new1<-data.frame(origin=out_sample$origin,dev=out_sample$dev,dens_ODP_GLM=dens_ODPGLM_out_sample,dens_GAGLM=dens_GAGLM_out_sample,dens_LNGLM=dens_LNGLM_out_sample,dens_ZAGA=dens_ZAGA_out_sample,dens_ZALN=dens_ZALN_out_sample,dens_ODPHo=dens_ODPHo_out_sample,dens_GaHo=dens_GaHo_out_sample,dens_LNHo=dens_LNHo_out_sample,dens_ODPCal=dens_ODPCal_out_sample,dens_GaCal=dens_GaCal_out_sample,dens_LNCal=dens_LNCal_out_sample,dens_SpNormal=dens_SpNormal_out_sample,dens_SpGamma=dens_SpGamma_out_sample,dens_SpLN=dens_SpLN_out_sample,dens_GaGAMLSS=dens_GaGAMLSS_out_sample,dens_LNGAMLSS=dens_LNGAMLSS_out_sample,dens_PPCI=dens_PPCI_out_sample,dens_PPCF=dens_PPCF_out_sample,dens_EqEn=dens_Eneq)
+  meta_CDF_out_1_aug_new1<-data.frame(origin=out_sample$origin,dev=out_sample$dev,CDF_ODP_GLM=CDF_ODPGLM_out_sample,CDF_GAGLM=CDF_GAGLM_out_sample,CDF_LNGLM=CDF_LNGLM_out_sample,CDF_ZAGA=CDF_ZAGA_out_sample,CDF_ZALN=CDF_ZALN_out_sample,CDF_ODPHo=CDF_ODPHo_out_sample,CDF_GaHo=CDF_GaHo_out_sample,CDF_LNHo=CDF_LNHo_out_sample,CDF_ODPCal=CDF_ODPCal_out_sample,CDF_GaCal=CDF_GaCal_out_sample,CDF_LNCal=CDF_LNCal_out_sample,CDF_SpNormal=CDF_SpNormal_out_sample,CDF_SpGamma=CDF_SpGamma_out_sample,CDF_SpLN=CDF_SpLN_out_sample,CDF_GaGAMLSS=CDF_GaGAMLSS_out_sample,CDF_LNGAMLSS=CDF_LNGAMLSS_out_sample,CDF_PPCI=CDF_PPCI_out_sample,CDF_PPCF=CDF_PPCF_out_sample,CDF_EqEn=CDF_Eneq)
   
   
   meta_mu_out_0_aug_new1_original<-meta_mu_out_0_aug_new1[,-c(1,2)]*10000
@@ -888,7 +1011,7 @@ for (D in 1:ntri){
   meta_mu_augvalid<-data.frame(origin=aug_valid$origin,dev=aug_valid$dev,mu_ODP_GLM=mu_ODPGLM2*10000,mu_GAGLM=mu_GAGLM2*10000,mu_LNGLM=mu_LNGLM2*10000,mu_ZAGA=mu_ZAGA2*10000,mu_ZALN=mu_ZALN2*10000,mu_ODPHo=mu_ODPHo2*10000,mu_GaHo=mu_GaHo2*10000,mu_LNHo=mu_LNHo2*10000,mu_ODPCal=mu_ODPCal2*10000,mu_GaCal=mu_GaCal2*10000,mu_LNCal=mu_LNCal2*10000,mu_SpNormal=mu_SpNormal2*10000,mu_SpGamma=mu_SpGamma2*10000,mu_SpLN=mu_SpLN2*10000,mu_GaGAMLSS=mu_GaGAMLSS2*10000,mu_LNGAMLSS=mu_LNGAMLSS2*10000,mu_PPCI=mu_PPCI2*10000,mu_PPCF=mu_PPCF2*10000,observed=aug_valid$value*10000)
   
  
-  future_claims[,D]<-out_sample$value
+  future_claims[,D]<-out_sample$value*10000
   
   index_best_validmod2[D]<-index_best
   ##Record the Predictive Density at Validation Set
@@ -896,6 +1019,8 @@ for (D in 1:ntri){
   
   ##Record the Predictive Density at Out-of-Sample
   out_dens_list[[D]]<-meta_dens_out_1_aug_new1
+  out_CDF_list[[D]] <- meta_CDF_out_1_aug_new1
+  valid_CDF_list[[D]] <- meta_CDF_augvalid 
   
   #Record the predicted mean in validation data
   valid_mu_list[[D]]<-meta_mu_augvalid
@@ -904,4 +1029,29 @@ for (D in 1:ntri){
   out_mu_list[[D]]<-meta_mu_out_1_aug_new1_original
 
   
-}  
+} 
+
+## Calculate the predictive density and Log Score of BMV:
+out_dens_OW_BMV<-matrix(NA,nrow=nrow(out_sample),ncol=ntri)
+for (i in 1:ntri){
+  out_dens_OW_BMV[,i]<-out_dens_list[[i]][, index_best_validmod2[i]]
+}
+
+
+OW_out_LS_BMW_dat <- cbind(data.frame(origin = out_sample$origin, dev = out_sample$dev), out_dens_OW_BMV)
+  
+LS_acc_OW_BMW <- matrix(NA,nrow=39,ncol=ntri)
+for (i in 2:40){
+  LS_acc_OW_BMW[i-1,]<-apply(log(OW_out_LS_BMW_dat[OW_out_LS_BMW_dat$origin==i, -c(1,2)]),MARGIN=2,FUN=mean)
+}
+
+LS_acc_OW_BMW_avg <- apply(LS_acc_OW_BMW,MARGIN=1,FUN=mean)
+
+
+
+
+# save(valid_mu_list, file = "valid_mu_list")
+# save(valid_CDF_list, file = "valid_CDF_list")
+# save(valid_dens_list, file = "valid_dens_list")
+# save(out_dens_list, file = "out_dens_list")
+# save(out_CDF_list,file = "out_CDF_list")
