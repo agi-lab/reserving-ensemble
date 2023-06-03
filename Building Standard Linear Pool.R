@@ -36,6 +36,11 @@ for (D in 1:ntri){
 
 ### Calculate the Log-score associated with Partion strategy 0:
 
+origin<-as.numeric(as.character(out_sample$origin))
+dev<-as.numeric(as.character(out_sample$dev))
+
+OW_out_LS_par0_dat <- as.data.frame(cbind(origin,dev,OW_out_dens_par0))
+
 OW_out_LS_par0_dat <- as.data.frame(cbind(origin,dev,OW_out_dens_par0))
 LS_acc_OW_par0 <- matrix(NA,nrow=39,ncol=ntri)
 for (i in 2:40){
