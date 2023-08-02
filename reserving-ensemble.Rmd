@@ -3,12 +3,7 @@ title: "Reserving Ensemble"
 output: html_notebook
 ---
 
-```{r}
-# NOTEs to Jim to review
-# - methodology for PPCI and PPCF
-# - paper is missing partition strategy for ap2-4
-# - review all ODP functions. Should the value be val/phi or just val?
-```
+
 
 ```{r Setup, results='hide', echo=FALSE}
 # NOTE remember to 'restart R and clear all outputs' if changing triangle size
@@ -218,7 +213,6 @@ ggplot(data=stack(data.frame(mean_score_over_sim)[, c('ADLP_par0', 'BMV', 'EW')]
 
 # Log Score with Different Split Points
 corres_splitpoints_SLPincluded<-c(0, split_points)
-# TODO JIM TO REVIEW
 LS_comparision_ADLP <- unlist(lapply(ensemble_logS, FUN = function(x) mean(unlist(x), na.rm = TRUE)))[1:(n.ensembles-2)]
 #LS_comparision_ADLP <- unlist(lapply(ensemble_logS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
 
@@ -313,7 +307,7 @@ ggplot(data=stack(data.frame(mean_score_over_sim)[, c('ADLP_par0', 'ADLP_par12',
 
 # CRPS with Different Split Points
 corres_splitpoints_SLPincluded<-c(0, split_points)
-# TODO JIM TO REVIEW
+
 CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) mean(unlist(x))))[1:(n.ensembles-2)]
 #CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
 
