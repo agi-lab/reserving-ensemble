@@ -151,7 +151,7 @@ fit_all_component_models <- function(train.data, test.data) {
       N[i]<- sum(train.data[train.data$origin==i,]$notif_count) + 
              sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0)) 
              # + sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0))
-             # TODO JIM to review, original code added this twice.
+            
     }
     
     ###PPCI
@@ -166,9 +166,9 @@ fit_all_component_models <- function(train.data, test.data) {
     ###PPCF
     #Alternatively, fit a ODP on finalization claims that depends on development periods
     odp_FC<-glm(settle_count~factor(dev),data=train.data,family=quasipoisson(link="log"))
-    PPCF_data <- calc_PPCF(N, train.data) # TODO JIM to review, the paper asks for settlement count in PPCF model, but original code assumes all notified counts are settled in the next year
+    PPCF_data <- calc_PPCF(N, train.data) 
     ODP_PPCF<-glm(PPCF~OT,family=quasipoisson(link="log"),data=PPCF_data)
-    dens_PPCF <- cal_dens_PPCF(y.test, odp_FC,ODP_PPCF, N, train.data,test.data) # TODO JIM to review warnings
+    dens_PPCF <- cal_dens_PPCF(y.test, odp_FC,ODP_PPCF, N, train.data,test.data) 
     CDF_PPCF <- cal_CDF_PPCF(y.test, odp_FC,ODP_PPCF,N,train.data,test.data)
     mu_PPCF<-cal_mu_PPCF(odp_FC,ODP_PPCF,N, train.data,test.data)
     
@@ -392,7 +392,7 @@ fit_all_component_models_smallTriangle <- function(train.data, test.data) {
         N[i]<- sum(train.data[train.data$origin==i,]$notif_count) + 
             sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0)) 
         # + sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0))
-        # TODO JIM to review, original code added this twice.
+        
     }
     
     ###PPCI
@@ -407,9 +407,9 @@ fit_all_component_models_smallTriangle <- function(train.data, test.data) {
     ###PPCF
     #Alternatively, fit a ODP on finalization claims that depends on development periods
     odp_FC<-glm(settle_count~factor(dev),data=train.data,family=quasipoisson(link="log"))
-    PPCF_data <- calc_PPCF(N, train.data) # TODO JIM to review, the paper asks for settlement count in PPCF model, but original code assumes all notified counts are settled in the next year
+    PPCF_data <- calc_PPCF(N, train.data) 
     ODP_PPCF<-glm(PPCF~OT,family=quasipoisson(link="log"),data=PPCF_data)
-    dens_PPCF <- cal_dens_PPCF(y.test, odp_FC,ODP_PPCF, N, train.data,test.data) # TODO JIM to review warnings
+    dens_PPCF <- cal_dens_PPCF(y.test, odp_FC,ODP_PPCF, N, train.data,test.data) 
     CDF_PPCF <- cal_CDF_PPCF(y.test, odp_FC,ODP_PPCF,N,train.data,test.data)
     mu_PPCF<-cal_mu_PPCF(odp_FC,ODP_PPCF,N, train.data,test.data)
     
