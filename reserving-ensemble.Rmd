@@ -10,6 +10,7 @@ output: html_notebook
 # Number of triangles/simulations
 n.sims <- 100
 tri.size <- 40
+## Note: the current code only supports triangle size of 20 x 20 and 40 x 40 
 
 source('utils/load_required_packages.R')
 source('utils/defining_helper_functions.R')
