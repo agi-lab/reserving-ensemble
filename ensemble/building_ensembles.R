@@ -193,36 +193,3 @@ fit_all_partition_ensembles_20 <- function(meta_dens_valid, meta_dens_outsample)
     return (all_ensembles)
 }
 
-################################################################################
-### Function for fitting ensemble models for different partitions for size 40 triangle
-################################################################################
-
-
-fit_all_partition_ensembles_10 <- function(meta_dens_valid, meta_dens_outsample) {
-    source('ensemble/defining_partitions_triangle_10.R')
-    
-    ADLP_par0 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par0)
-    
-    ADLP_par1 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par1_2_10)
-    
-    ADLP_par2 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par2_2_10)
-    
-    ADLP_par3 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par3_2_10)
-    
-    ADLP_par4 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par4_2_10)
-    
-    ADLP_par5 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par5_2_10)
-    
-    ADLP_par6 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par6_2_10)
-    
-    all_ensembles <- list(
-        ADLP_par0=ADLP_par0,
-        ADLP_par1=ADLP_par1,
-        ADLP_par2=ADLP_par2,
-        ADLP_par3=ADLP_par3,
-        ADLP_par4=ADLP_par4,
-        ADLP_par5=ADLP_par5,
-        ADLP_par6=ADLP_par6
-    )
-    return (all_ensembles)
-}
