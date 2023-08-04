@@ -25,7 +25,7 @@ library("ChainLadder")
 
 ############## Claim size: Default power normal
 # S^0.2 ~ N(9.5, 3), left truncated at 30
-# TODO: JIM for description, what is s supposed to be and what does this function do?
+
 S_df <- function(s) {
     # truncate and rescale
     if (s < 1) {
@@ -37,11 +37,10 @@ S_df <- function(s) {
     }
 }
 
-# TODO: JIM for description, what is s supposed to be and what does this function do?
+
 notidel_param <- function(claim_size, occurrence_period){
     
-    # TODO JIM I have scaled the mean notification delay so that all payments are within the bounds
-    # Please amend if not necessary
+    
     mean <- 2.47 * tri.size / 40
     cv <- 1.54
     shape <- get_Weibull_parameters(mean, cv)[1, ]
@@ -51,10 +50,9 @@ notidel_param <- function(claim_size, occurrence_period){
 
 
 # Claim closure: Default Weibull
-# TODO: JIM for description, what is s supposed to be and what does this function do?
+
 setldel_param <- function(claim_size, occurrence_period) {
-    # TODO JIM I have scaled the mean notification delay so that all payments are within the bounds
-    # Please amend if not necessary
+    
     target_mean <- 11.74 * tri.size / 40
     
     # specify the target Weibull coefficient of variation
@@ -64,7 +62,7 @@ setldel_param <- function(claim_size, occurrence_period) {
       scale = get_Weibull_parameters(target_mean, target_cv)[2, ])
 }
 
-# TODO: JIM for description, what is s supposed to be and what does this function do?
+
 r_pmtdel <- function(n, claim_size, setldel, setldel_mean) {
     result <- c(rep(NA, n))
     
@@ -101,7 +99,7 @@ r_pmtdel <- function(n, claim_size, setldel, setldel_mean) {
     return(result)
 }
 
-# TODO: JIM for description, what is s supposed to be and what does this function do?
+
 param_pmtdel <- function(claim_size, setldel, occurrence_period) {
     # mean settlement delay
     if (claim_size < (0.10 * ref_claim) & occurrence_period >= 21) {
@@ -120,7 +118,7 @@ param_pmtdel <- function(claim_size, setldel, occurrence_period) {
 # Remove the Superimposed inflation
 # 2) With respect to payment "time" (continuous scale)
 # -> compounding by user-defined time unit
-# TODO: JIM for description, what is s supposed to be and what does this function do?
+
 SI_payment <-  function(payment_time, claim_size){1}
 SI_occurrence <- function(occurrence_time, claim_size){1}
 
@@ -209,16 +207,7 @@ simulate_splice <- function(seed) {
         SI_payment
     )
     
-    # TODO JIM to review,
-    # The original code has:
-    #   adjust = FALSE for the full data and
-    #   adjust = TRUE for the past data
-    #   
-    #   I believe that we should make this consistent? Adjust = True means that there is no 'tail' column for all claims outside the triangle
-    #   Which means that all the claims that occur in the tail get added onto the last development period for AP1
-    #   This might be inflating the training dataset for 'past data'
-    #   
-    #   I think that adjust should be TRUE, to remove 
+   
     
     agg_sqrt_withTail <- claim_output(
         n_vector,
@@ -229,7 +218,7 @@ simulate_splice <- function(seed) {
         adjust = FALSE
     )
     
-    # TODO JIM If adjust = TRUE, then the next line of code can be deleted
+  
     agg_sqrt<-agg_sqrt_withTail[,-ncol(agg_sqrt_withTail)]
     colnames(agg_sqrt)<-c(1:tri.size)
     rownames(agg_sqrt)<-c(1:tri.size)
@@ -239,10 +228,10 @@ simulate_splice <- function(seed) {
         payment_times, 
         payment_inflated,
         incremental = TRUE,
-        future = FALSE, # TODO JIM to review, inclusion
-        # adjust = FALSE  # TODO JIM to review, inclusion
+        future = FALSE, 
+        # adjust = FALSE  
     )
-    # TODO JIM If adjust = FALSE, then a line of code to remove the tail should be included.
+  
     colnames(agg_tri_withInflation)<-c(1:tri.size)
     rownames(agg_tri_withInflation)<-c(1:tri.size)
     
@@ -377,9 +366,7 @@ for (D in 1:n.sims){
     # Full Triangle
     cum_U_dt_full<-data.frame(origin=cum_F_dt_full$origin,dev=cum_F_dt_full$dev,calendar=cum_F_dt_full$calendar,value=cum_Count_dt_full$value-cum_F_dt_full$value)
     
-    # TODO Jim to review
-    # Change in methodology to make consistent with other data inputs
-    # Unfinalised Claims [i,j] = Cumulative Notifications [i, j] - Cumlative Settlements[i, j] + Notifications [i, j+1]
+    
     UplusN<-matrix(NA,nrow=tri.size,ncol=tri.size)
     UplusN_full<-matrix(NA,nrow=tri.size,ncol=tri.size)
     for (i in 1:tri.size){
