@@ -5,4 +5,3 @@ The code is written for the paper "Stochastic Ensemble Loss Reserving", with the
 The scripts for reserving ensembles can produce the standard linear pool ensemble and the Accident Development periods dependent on Linear Pools (ADLP) ensembles tailored to the general insurance loss data.  
 
 Please put all the R scripts in the same folder and run the main script, 'reserving-ensemble.Rmd', which also include the plotting of the key results in the paper. 
-*Note: please put the R script `simulate_claims.R` and `simulating_ensembles.R` inside the `simulation` folder when running the main Rmd file. 

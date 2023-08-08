@@ -12,6 +12,7 @@ if (!require("ChainLadder")) install.packages("ChainLadder")
 if (!require("ggplot2")) install.packages("ggplot2")
 if(!require("tweedie")) install.packages("tweedie")
 if(!require("coda")) install.packages("coda")
+if(!require("dplyr")) install.packages("dplyr")
 
 
 ###Loading the required packages
@@ -24,3 +25,4 @@ library("ChainLadder")
 library("ggplot2")
 library("tweedie")
 library("coda")
+library("dplyr")

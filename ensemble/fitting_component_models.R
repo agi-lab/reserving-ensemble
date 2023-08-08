@@ -29,9 +29,7 @@ if (!exists('tri.size')) {stop("Size of triangles 'tri.size' should be defined")
 ################################################################################
 
 fit_all_component_models <- function(train.data, test.data) {
-    # sink('NULL')
-    #train.data <- rbind(full_data_split$train, full_data_split$valid)
-    #test.data <- full_data_split$test
+
     train.data.numeric <- df.to.numeric(train.data)
     test.data.numeric <- df.to.numeric(test.data)
     y.test <- test.data.numeric$aggregate_claims
@@ -150,8 +148,6 @@ fit_all_component_models <- function(train.data, test.data) {
     for (i in 2:tri.size){
       N[i]<- sum(train.data[train.data$origin==i,]$notif_count) + 
              sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0)) 
-             # + sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0))
-            
     }
     
     ###PPCI
@@ -269,20 +265,15 @@ fit_all_component_models <- function(train.data, test.data) {
       CDF_PPCF=CDF_PPCF
     )
     
-    sink()
     return (list(component_models=component_models, meta_mu=meta_mu, meta_dens=meta_dens, meta_CDF=meta_CDF))
 }
 
-
-
-
-## Deine a fit_all_component_models function for smaller triangles: 
+## Define a fit_all_component_models function for smaller triangles: 
 ### We exclude ZALN and ZAGA as there are no zero incremental claims for 10x10 and 20x20 
 
 fit_all_component_models_smallTriangle <- function(train.data, test.data) {
-    # sink('NULL')
-    #train.data <- rbind(full_data_split$train, full_data_split$valid)
-    #test.data <- full_data_split$test
+    
+    
     train.data.numeric <- df.to.numeric(train.data)
     test.data.numeric <- df.to.numeric(test.data)
     y.test <- test.data.numeric$aggregate_claims
@@ -390,9 +381,7 @@ fit_all_component_models_smallTriangle <- function(train.data, test.data) {
     N[1]<-sum(train.data[train.data$origin==1,]$notif_count)
     for (i in 2:tri.size){
         N[i]<- sum(train.data[train.data$origin==i,]$notif_count) + 
-            sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0)) 
-        # + sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0))
-        
+            sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0))
     }
     
     ###PPCI
@@ -502,7 +491,6 @@ fit_all_component_models_smallTriangle <- function(train.data, test.data) {
         CDF_PPCF=CDF_PPCF
     )
     
-    sink()
     return (list(component_models=component_models, meta_mu=meta_mu, meta_dens=meta_dens, meta_CDF=meta_CDF))
 }
 
