@@ -1,4 +1,10 @@
 ################################################################################
+## This module simulations the claims triangles for analysis from the SynthETIC
+##    packages. The assumptions used for claims simulation are for illustration 
+##    only and used to support the reserving ensemble paper. 
+################################################################################
+
+################################################################################
 ## Required variables to run module
 ################################################################################
 
@@ -25,7 +31,6 @@ library("ChainLadder")
 
 ############## Claim size: Default power normal
 # S^0.2 ~ N(9.5, 3), left truncated at 30
-
 S_df <- function(s) {
     # truncate and rescale
     if (s < 1) {
@@ -37,7 +42,7 @@ S_df <- function(s) {
     }
 }
 
-
+# Parameters for Notification Delay: Default Weibull
 notidel_param <- function(claim_size, occurrence_period){
     
     
@@ -50,7 +55,6 @@ notidel_param <- function(claim_size, occurrence_period){
 
 
 # Claim closure: Default Weibull
-
 setldel_param <- function(claim_size, occurrence_period) {
     
     target_mean <- 11.74 * tri.size / 40
@@ -62,7 +66,7 @@ setldel_param <- function(claim_size, occurrence_period) {
       scale = get_Weibull_parameters(target_mean, target_cv)[2, ])
 }
 
-
+# Simulate random payment delay from Weibull
 r_pmtdel <- function(n, claim_size, setldel, setldel_mean) {
     result <- c(rep(NA, n))
     
@@ -99,7 +103,7 @@ r_pmtdel <- function(n, claim_size, setldel, setldel_mean) {
     return(result)
 }
 
-
+# Calculate parameters for payment delay
 param_pmtdel <- function(claim_size, setldel, occurrence_period) {
     # mean settlement delay
     if (claim_size < (0.10 * ref_claim) & occurrence_period >= 21) {

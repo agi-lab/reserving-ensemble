@@ -1,3 +1,14 @@
+################################################################################
+### This module defines two main scoring methods for the ensemble models. This 
+###     is composed of the log score (LS) and CRPS
+### 
+### To calculate the log score, the density of the ensemble is firstly calculated
+### 
+### To calculate the CRPS, the distribution function of each component model
+###     is firstly evaluated given the out of sample dataset. Then, for each 
+###     parition, the CRPS of each data point is calculated and summed together.
+################################################################################
+
 library("coda")
 if (!exists('tri.size')) {stop("Size of triangles 'tri.size' should be defined")}
 
@@ -7,7 +18,6 @@ if (!exists('tri.size')) {stop("Size of triangles 'tri.size' should be defined")
 
 calc_dens_ensemble <- function(meta_dens_components, ensemble_models) {
     
-    #ensemble_models <- fitted_components_outsample
     n.ensembles <- length(ensemble_models)
     all_dens_ensemble <- list()
     
@@ -46,13 +56,11 @@ calc_dens_ensemble <- function(meta_dens_components, ensemble_models) {
 ### Module for calculating CRPS metrics
 ################################################################################
 
-calc_crps_ensemble <- function(n.sims, component_models, ensemble_models) {
+calc_crps_ensemble_40 <- function(n.sims, component_models, ensemble_models) {
     
     I<-function(y,z) ifelse(y<=z,1,0)
     
     n.ensembles <- length(ensemble_models)
-    #component_models <- fitted_components_outsample
-    #ensemble_models <- all_ensembles
     
     tau_Ga <- 5
     tau_LN <- 5
@@ -65,7 +73,6 @@ calc_crps_ensemble <- function(n.sims, component_models, ensemble_models) {
     for (s in 1:n.sims) {
         # s <- 1
         set.seed(20200130+s)
-    
         
         fit_ODP_GLM = component_models[[s]]$fit_ODP_GLM
         fit_GAGLM = component_models[[s]]$fit_GAGLM
@@ -91,11 +98,8 @@ calc_crps_ensemble <- function(n.sims, component_models, ensemble_models) {
         out_sample <- claims_df_in_out(full_data)$test
         
         z_l<-1
-        #JL
         z_u <- 2*round(max(out_sample$aggregate_claims),0)
         z<-z_l:z_u
-        
-        
         
         data <- in_sample
         newdata <- out_sample
@@ -127,7 +131,6 @@ calc_crps_ensemble <- function(n.sims, component_models, ensemble_models) {
         
         
         for (j in 1:n.ensembles){
-            # j <- 2
             ensemble <- ensemble_models[[j]]
             
             out_partitions <- ensemble$partition_func(out_sample)
@@ -138,23 +141,124 @@ calc_crps_ensemble <- function(n.sims, component_models, ensemble_models) {
             crps_ij <- c()
             
             for (k in 1:n.partitions) {
-                # k <- 1
                 y = out_partitions[[k]][ , "aggregate_claims"]
                 partition_ind <- rownames(newdata) %in% rownames(out_partitions[[k]])
                 w <- ensemble_w[[k]]
                 
-                #partition_ind <- 1
                 pred_CDF_ensemble <- matrix(0, nrow = length(z), ncol = length(y))
                 for (cdf_i in 1:length(w)) {
                     pred_CDF_ensemble <- pred_CDF_ensemble + pred_CDF[[cdf_i]][, partition_ind] * w[cdf_i]
                 }
                 
-                # Testing code: 
-                # pred_CDF_all_models <- matrix(NA, nrow = 702, ncol = 18)
-               # for(i in 1:18){
-            #        pred_CDF_all_models[, i] <- pred_CDF[[i]][, 1]
-            #    }
-                # View(pred_CDF_all_models%*%w)
+                diff <- colSums((pred_CDF_ensemble-t(outer(y, z, I)))^2)
+                
+                crps <- c(crps, diff)
+                crps_ij <- c(crps_ij, paste(out_partitions[[k]]$origin, "-", out_partitions[[k]]$dev, sep = ""))
+            }
+            
+            names(crps) = crps_ij
+            crps_ensembles[[j]][[s]] <- crps[order(names(crps))]
+        }
+        
+    }
+    
+    names(crps_ensembles) <- names(ensemble_models)
+    return(crps_ensembles)
+}
+
+### We exclude ZALN and ZAGA as there are no zero incremental claims for 10x10 and 20x20 
+
+calc_crps_ensemble_20 <- function(n.sims, component_models, ensemble_models) {
+    
+    I<-function(y,z) ifelse(y<=z,1,0)
+    
+    n.ensembles <- length(ensemble_models)
+    
+    tau_Ga <- 5
+    tau_LN <- 5
+    
+    crps_ensembles <- list()
+    for (j in 1:n.ensembles){
+        crps_ensembles[[j]] <- list()
+    }
+    
+    for (s in 1:n.sims) {
+        # s <- 1
+        set.seed(20200130+s)
+        
+        fit_ODP_GLM = component_models[[s]]$fit_ODP_GLM
+        fit_GAGLM = component_models[[s]]$fit_GAGLM
+        fit_LNGLM = component_models[[s]]$fit_LNGLM
+        fit_ODPHo = component_models[[s]]$fit_ODPHo
+        fit_GaHo = component_models[[s]]$fit_GaHo
+        fit_LNHo = component_models[[s]]$fit_LNHo
+        fit_ODPCal = component_models[[s]]$fit_ODPCal
+        fit_GaCal = component_models[[s]]$fit_GaCal
+        fit_LNCal = component_models[[s]]$fit_LNCal
+        fit_SpNormal = component_models[[s]]$fit_SpNormal
+        fit_SpGamma = component_models[[s]]$fit_SpGamma
+        fit_SpLN = component_models[[s]]$fit_SpLN
+        fit_GaGAMLSS = component_models[[s]]$fit_GaGAMLSS
+        fit_LNGAMLSS = component_models[[s]]$fit_LNGAMLSS
+        fit_PPCI = component_models[[s]]$fit_PPCI
+        fit_PPCF = component_models[[s]]$fit_PPCF
+        
+        full_data <- read.csv(sprintf('simulation/triangle_%s-data/sim%s-full-data.csv', tri.size, s))
+        in_sample <- claims_df_in_out(full_data)$train
+        out_sample <- claims_df_in_out(full_data)$test
+        
+        z_l<-1
+        z_u <- 2*round(max(out_sample$aggregate_claims),0)
+        z<-z_l:z_u
+        
+        
+        
+        data <- in_sample
+        newdata <- out_sample
+        
+        # This should be a list of length 18 for each component, each with a 
+        # length(z) x nrow(newdata) matrix
+        
+        pred_CDF <- list(
+            cal_CDF_ODP(z, fit_ODP_GLM, newdata, new_y = T),
+            cal_CDF_GA(z, fit_GAGLM, tau_Ga, data, newdata, new_y = T),
+            cal_CDF_LN(z, fit_LNGLM, tau_LN, data, newdata, new_y = T),
+            cal_CDF_ODP(z, fit_ODPHo, newdata, new_y = T),
+            cal_CDF_GA(z, fit_GaHo, tau_Ga, data, newdata, new_y = T),
+            cal_CDF_LN(z, fit_LNHo, tau_LN, data, newdata, new_y = T),
+            cal_CDF_ODP(z, fit_ODPCal, newdata, new_y = T),
+            cal_CDF_GA(z, fit_GaCal, tau_Ga, data, newdata, new_y = T),
+            cal_CDF_LN(z, fit_LNCal, tau_LN, data, newdata, new_y = T),
+            cal_CDF_Normal(z, fit_SpNormal, data, newdata, new_y = T),
+            cal_CDF_GA(z, fit_SpGamma, tau_Ga, data, newdata, new_y = T),
+            cal_CDF_LN(z, fit_SpLN, tau_LN, data, newdata, new_y = T),
+            cal_CDF_GA_Gamlss(z, fit_GaGAMLSS, tau_Ga, data, newdata, new_y = T),
+            cal_CDF_LN_Gamlss(z, fit_LNGAMLSS, tau_LN, data, newdata, new_y = T),
+            cal_CDF_PPCI(z, fit_PPCI$model, fit_PPCI$N, newdata, new_y = T),
+            cal_CDF_PPCF(z, fit_PPCF$model_subCount, fit_PPCF$model_subPayments, fit_PPCF$N, data, newdata, new_y = T)
+        )
+        
+        
+        
+        for (j in 1:n.ensembles){
+            ensemble <- ensemble_models[[j]]
+            
+            out_partitions <- ensemble$partition_func(out_sample)
+            n.partitions <- length(out_partitions)
+            
+            ensemble_w <- ensemble$model_weights_simul_sims[[s]]
+            crps <- c()
+            crps_ij <- c()
+            
+            for (k in 1:n.partitions) {
+                y = out_partitions[[k]][ , "aggregate_claims"]
+                partition_ind <- rownames(newdata) %in% rownames(out_partitions[[k]])
+                w <- ensemble_w[[k]]
+                
+                pred_CDF_ensemble <- matrix(0, nrow = length(z), ncol = length(y))
+                for (cdf_i in 1:length(w)) {
+                    pred_CDF_ensemble <- pred_CDF_ensemble + pred_CDF[[cdf_i]][, partition_ind] * w[cdf_i]
+                }
                 
                 diff <- colSums((pred_CDF_ensemble-t(outer(y, z, I)))^2)
                 
@@ -178,9 +282,6 @@ calc_crps_ensemble <- function(n.sims, component_models, ensemble_models) {
 
 calc_DM_test_stat <- function(model1_scores, model2_scores) {
     # Assume dim of scores is (n.sample, n.sim)
-    # Example: Checks
-    #model1_scores <- sim_data_to_matrix(ensemble_logS$ADLP_par0)
-    #model2_scores <- sim_data_to_matrix(ensemble_logS$EW)
     n <- ncol(model1_scores)
     
     F_bar <- apply(model1_scores, MARGIN = 1, FUN = mean)
@@ -190,9 +291,6 @@ calc_DM_test_stat <- function(model1_scores, model2_scores) {
     test_stat <- (sqrt(n) * (F_bar - S_bar)) / (sigma2_1)
     return (test_stat)
 }
-
-# Check
-#sqrt(sum((model1_scores[2, ]-model2_scores[2, ])^2)/n)
 
 
 calc_adj_DM_test_stat <- function(model1_scores, model2_scores) {
@@ -225,10 +323,6 @@ calc_DM_test_models <- function(ensemble_scores, model1_ind, model2_ind) {
     #   - simulation 
     #     - data
     # and turn it into (data, simulation) matrix
-    
-    #model1_ind <- SLP_ind 
-    #model2_ind <- EW_ind
-    #ensemble_scores <- ensemble_logS
     
     model1_scores <- sim_data_to_matrix(ensemble_scores[[model1_ind]])
     model2_scores <- sim_data_to_matrix(ensemble_scores[[model2_ind]])

@@ -1,7 +1,15 @@
-###########################
-##Note: the numbering of the ADLP ensemble is not the same as the numbering of ADLP ensemble in the paper due to better presentation in paper
-##########################
-####please refer to the following index section for the actual partition of subsets
+################################################################################
+## This file defines partitions for triangles of size 40. This includes:
+## - The partitioning of training, validation and test sets
+## - The ADLP partitioning used to calculate different ADLP ensembles
+##      - Two subset partitioning and Three subset partitioning is considered for
+##          triangles of size 40.
+################################################################################
+
+################################################################################
+## Note: ADLP partitions of size 20 are also analysed to see the impact of 
+##      contributions on different triangle sizes.
+################################################################################
 
 ################################################################################
 claims_df_train_val_test_20 <- function(df) {

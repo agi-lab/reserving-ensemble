@@ -1,11 +1,13 @@
 ################################################################################
-### Function for fitting ensemble models (automatically calculates weights)
+### Algorithm for fitting ensemble models it uses the densities of the component
+###   models to automatically calculating the weighting that the ensemble model
+###   should have for each component (for each partition)
 ###
-### Function accepts three 5 parameters:
+### Function accepts three parameters:
 ### - component_dens_valid: densities of component models from validation set
 ### - component_dens_out: densities of component models from out of sample set
-### - valid_partitions: list containing indices for the paritions of the validation set
-### - out_partitions: list containing indicies for the partitions of the out of sample set
+### - parition_func: the partition function that paritions the validation and test
+###     datasets based off accident periods.
 ################################################################################
 
 fit_ensemble_model <- function(
@@ -39,6 +41,8 @@ fit_ensemble_model <- function(
     
     
     for (i in 1:n.partitions) {
+      
+        # Transform the partitions into a data.frame structure for processing.
         partition_in <- do.call('rbind', valid_partitions[1:i])
         parition_out <- valid_partitions[[i]]
         
@@ -66,7 +70,7 @@ fit_ensemble_model <- function(
 ### Function for fitting ensemble models for different partitions for size 40 triangle
 ################################################################################
 
-
+# Fits all ADLP paritions for two-subset for size 40 triangle
 fit_all_partition_ensembles_40 <- function(meta_dens_valid, meta_dens_outsample) {
     source('ensemble/defining_partitions_triangle_40.R')
   
@@ -133,6 +137,7 @@ fit_all_partition_ensembles_40 <- function(meta_dens_valid, meta_dens_outsample)
 }
 
 
+# Fits all ADLP paritions for two-subset for size 40 triangle
 fit_all_partition_ensembles_40_3par <- function(meta_dens_valid, meta_dens_outsample) {
   source('ensemble/defining_partitions_triangle_40.R')
   
@@ -158,6 +163,7 @@ fit_all_partition_ensembles_40_3par <- function(meta_dens_valid, meta_dens_outsa
 ################################################################################
 
 
+# Fits all ADLP paritions for two-subset for size 20 triangle
 fit_all_partition_ensembles_20 <- function(meta_dens_valid, meta_dens_outsample) {
     source('ensemble/defining_partitions_triangle_20.R')
     

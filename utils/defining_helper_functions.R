@@ -1,6 +1,6 @@
 
 ################################################################################
-## Helper Functions
+## This module defines helper functions used throughout the code.
 ################################################################################
 
 # Helper Functions for Fitting Models
@@ -50,6 +50,8 @@ MM_optim <- function(w_init,dat,testdat,nIters){
     return(list(finalparams=w, finalNLL = current_loss))
 }
 
+################################################################################
+## Transforms the origin and development columns to numerics and factors respectively
 ################################################################################
 df.to.factor <- function(df) {
     df$origin<-as.factor(df$origin)

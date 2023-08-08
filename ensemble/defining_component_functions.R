@@ -1,6 +1,7 @@
 
 ################################################################################
-## Functions required for component models
+## This file defines functions required for component models and their relevant
+## distributions, including:
 ## - Density
 ## - Predictive parameters
 ## - Predictive density
@@ -13,28 +14,6 @@
 ################################################################################
 # ODP GLMcc
 ################################################################################
-
-#create a ODP density function
-# dODP<-function(y,lambda,phi, new_y = F) {
-#     
-#     if (!new_y) {
-#         ifelse(phi < 1e-6, dpois(floor(y), lambda), dpois(floor(y/phi), floor(lambda/phi))/phi)
-#     } else {
-#       ifelse(matrix(rep(phi, length(y)), ncol = length(phi)), 
-#              mapply(function(lambda) dpois(floor(y), lambda), lambda),
-#              mapply(function(lambda, phi) dpois(floor(y/phi), floor(lambda/phi))/phi, lambda, phi))
-#     }
-# }
-
-# dODP<-function(y,lambda,phi) {
-#     x<-y/phi
-#     lambda2<-lambda/phi
-#     if (phi>1e-6){
-#         exp(-lambda2)*lambda2^x/(phi*factorial(x))}
-#     else{dpois(round(y,0),lambda)}
-# }
-
-#dODP <- function(y,lambda,phi) dtweedie(y = y, mu = lambda, phi = phi, power = 1)
 
 dODP<-function(y,lambda,phi, new_y = F) {
     
@@ -71,30 +50,13 @@ cal_sigma_ODP<-function(model,newdata){
   return(pred_ODP_sigma)
 }
 
-#create a ODP CDF function
-
-
-# pODP<-function(y,lambda,phi, new_y = F) {
-#        if (!new_y) {
-#            ifelse(rep(phi, length(y)) < 1e-6, ppois(floor(y), lambda), ppois(floor(y/phi), floor(lambda/phi))/phi)
-#        } else {
-#            ifelse(matrix(rep(phi, length(y)), ncol = length(phi), byrow = T) < 1e-6, 
-#                   mapply(function(lambda) ppois(floor(y), lambda), lambda),
-#                   mapply(function(lambda, phi) ppois(floor(y/phi), floor(lambda/phi))/phi, lambda, phi))
-#        }
-#   }
-
-
-## JL: 
-pODP<-function(y,lambda,phi, new_y = F) {
+pODP<-function(y, lambda,phi, new_y = F) {
       if (!new_y) {
            ptweedie(q = y, mu = lambda, phi = phi, power = 1)
        } else {
-                  mapply(function(lambda, phi) ptweedie(q = y, mu = lambda, phi = phi, power = 1), lambda, phi)
+           mapply(function(lambda, phi) ptweedie(q = y, mu = lambda, phi = phi, power = 1), lambda, phi)
        }
-   }
-
-
+}
 
 ##Calculate ODP CDF from ODP GLM
 cal_CDF_ODP<-function(y, model,newdata, new_y = F){
@@ -110,27 +72,6 @@ cal_CDF_ODP<-function(y, model,newdata, new_y = F){
 }
 
 
-pODP_pre <-function(y,lambda,phi, new_y = F) {
-    if (!new_y) {
-      ifelse(phi < 1e-6, ppois(floor(y) - 1, lambda), ppois(floor(y/phi) - 1, floor(lambda/phi))/phi)
-    } else {
-      ifelse(matrix(rep(phi, length(y)), ncol = length(phi)), 
-             mapply(function(lambda) ppois(floor(y) - 1, lambda), lambda),
-             mapply(function(lambda, phi) ppois(floor(y/phi) - 1, floor(lambda/phi))/phi, lambda, phi))
-    }
-}
-
-cal_CDF_ODP_pre <- function(y, model,newdata, new_y = F){
-  pred_ODP <- predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
-  pred_ODP_mu <- pred_ODP$fit
-  pred_ODP_phi <- (pred_ODP$residual.scale)^2
-  if (!new_y) {return(pODP_pre(y,lambda=pred_ODP_mu,phi=pred_ODP_phi))}
-  else {return(mapply(
-    function(lambda, phi)
-      pODP_pre(y,lambda=lambda,phi=phi, new_y = new_y), pred_ODP_mu, pred_ODP_phi)
-  )}
-}
-
 fit_param_ODP<-function(model,newdata){
   pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
   pred_ODP_mu<-pred_ODP$fit
@@ -144,7 +85,6 @@ simulate_ODP<-function(param){
   return(simy)
   # replicate the simulations process k times; the ODP distribution corresponding to tweedie distribution with power=1
 }
-
 
 
 ################################################################################
@@ -280,7 +220,7 @@ cal_CDF_Normal<-function(y, model, data,newdata, new_y = F){
     )}
 }
 
-fit_param_NO<-function(model, data,newdata){
+fit_param_NO<-function(model, data, newdata){
     pred_mu<-predict(model,what="mu",data=data,newdata=newdata,type="response")
     pred_sigma<-predict(model,what="sigma",data=data,newdata=newdata,type="response")
     return(list(pred_mu=pred_mu, pred_sigma=pred_sigma))
@@ -489,20 +429,6 @@ cal_CDF_PPCI<-function(y, model,N,newdata, new_y = F){
   )}
 }
 
-##Calculate ODP CDF from PPCI model
-cal_CDF_PPCI_pre<-function(y, model,N,newdata, new_y = F){
-  N_rep<-vlookup_N_i(N,newdata)
-  pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
-  mu<-pred_ODP$fit*N_rep
-  phi<-(pred_ODP$residual.scale)^2*(N_rep)^2
-
-  if (!new_y) {return( sapply(1:length(y), function(i) pODP(y=y[i]-1,lambda=mu[i],phi=phi[i])))}
-  else {return(mapply(
-    function(mu, phi)
-      sapply(y, function(x) pODP_pre(y=x-1,lambda=mu,phi=phi)), mu, phi)
-  )}
-}
-
 fit_param_PPCI<-function(model,N,newdata){
   N_rep<-vlookup_N_i(N,newdata)
   pred_ODP<-predict.glm(model,newdata=newdata,type="response",se.fit=TRUE)
@@ -568,13 +494,6 @@ calc_pred_OT <- function(model_subCount, N, data, newdata) {
 ##Calculate ODP density from PPCF GLM
 cal_dens_PPCF<-function(y, model_subCount,model_subPayments,N, data,newdata){
     
-    # y <- y.test
-    # model_subCount <- odp_FC
-    # model_subPayments <- ODP_PPCF
-    # N <- N
-    # data <- train.data
-    # newdata <- test.data
-    
     pred_F <- predict(model_subCount,newdata=newdata,type="response")
     pred_OT <- calc_pred_OT(model_subCount, N, data, newdata)
     
@@ -591,15 +510,6 @@ cal_dens_PPCF<-function(y, model_subCount,model_subPayments,N, data,newdata){
     #assign a small number to the zero density in order to prevent -Inf Log Score
     return(dens_PPCF)
 }
-
-
-### Test code:
-# x <- y[453]/phi[453]
-# lambda2<-mu[453]/phi[453]
-# lambda2<-(y[453]-20)/phi[453]
-# exp(-lambda2)*lambda2^x/(phi[453]*factorial(x))
-
-#dtweedie(y = y, mu = mu, phi = phi[453], power = 1)
 
 ##Calculate ODP mean for PPCF model
 cal_mu_PPCF<-function(model_subCount,model_subPayments,N,data,newdata){
@@ -622,27 +532,6 @@ cal_sigma_PPCF<-function(model_subCount,model_subPayments, N, data,newdata){
     return(phi*mu)
 }
 
-##Calculate ODP CDF from PPCF GLM
-cal_CDF_PPCF_pre<-function(y, model_subCount,model_subPayments,N, data,newdata, new_y = F){
-    pred_F<-predict(model_subCount,newdata=newdata,type="response")
-    pred_OT <- calc_pred_OT(model_subCount, N, data, newdata)
-      
-    pred_payment<-predict(model_subPayments,newdata=data.frame(OT=pred_OT),type="response",se.fit=TRUE)
-    mu<-pred_payment$fit*pred_F
-    phi<-(pred_payment$residual.scale)^2*(pred_F)^2
-    
-    if (!new_y) {
-        CDF_PPCF <- pODP_pre(y=y, lambda=mu,phi=phi)
-    }
-    else {
-      CDF_PPCF <- mapply(
-      function(mu, phi)
-        pODP_pre(y=y, lambda=mu,phi=phi, new_y=new_y), mu, phi)
-    }
-    return (ifelse(CDF_PPCF == 0, min(CDF_PPCF[CDF_PPCF!=0]), CDF_PPCF))
-}
-
-## JL： 
 cal_CDF_PPCF<-function(y, model_subCount,model_subPayments,N,data,newdata, new_y = F){
     pred_F<-predict(model_subCount,newdata=newdata,type="response")
     pred_OT <- calc_pred_OT(model_subCount, N, data, newdata)
@@ -657,9 +546,7 @@ cal_CDF_PPCF<-function(y, model_subCount,model_subPayments,N,data,newdata, new_y
     else {
       CDF_PPCF <- mapply(
         function(mu, phi)
-            ## ## JL
         pODP(y=y,lambda=mu,phi=phi, new_y=new_y), mu, phi)
-        #ptweedie(q = y, mu = mu, phi = phi, power = 1), mu, phi)
     }
     return (ifelse(CDF_PPCF == 0, min(CDF_PPCF[CDF_PPCF!=0]), CDF_PPCF))
 }

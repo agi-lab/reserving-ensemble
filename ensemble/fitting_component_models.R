@@ -25,10 +25,10 @@ if (!exists('tri.size')) {stop("Size of triangles 'tri.size' should be defined")
 # - cum_settle_count
 # - unfinal_count
 ################################################################################
-# There are 18 models considered in this file
+# There are 18 models considered in this file for triangle size 40
 ################################################################################
 
-fit_all_component_models <- function(train.data, test.data) {
+fit_all_component_models_40 <- function(train.data, test.data) {
 
     train.data.numeric <- df.to.numeric(train.data)
     test.data.numeric <- df.to.numeric(test.data)
@@ -271,7 +271,7 @@ fit_all_component_models <- function(train.data, test.data) {
 ## Define a fit_all_component_models function for smaller triangles: 
 ### We exclude ZALN and ZAGA as there are no zero incremental claims for 10x10 and 20x20 
 
-fit_all_component_models_smallTriangle <- function(train.data, test.data) {
+fit_all_component_models_20 <- function(train.data, test.data) {
     
     
     train.data.numeric <- df.to.numeric(train.data)
