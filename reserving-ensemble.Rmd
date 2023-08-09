@@ -17,8 +17,11 @@ source('utils/defining_helper_functions.R')
 source('ensemble/defining_component_functions.R')
 source('ensemble/fitting_component_models.R')
 source('ensemble/building_ensembles.R')
+source('utils/defining_scoring_functions.R')
 source('utils/functions_for_trisize.R')
 ```
+
+# Claims Simulation
 
 ```{r Simulation}
 simulate_claims <- F
@@ -26,7 +29,8 @@ simulate_claims <- F
 if (simulate_claims) {source('simulation/simulate_claims.R')}
 ```
 
-# Fitting Component Models
+# Fitting Models
+## Fitting Component Models
 
 ```{r Fitting Component Models, results='hide'}
 # Meta data format:
@@ -72,7 +76,7 @@ for (sim in 1:n.sims) {
 })
 ```
 
-# Fitting Benchmark Models
+## Fitting Benchmark Models
 
 ```{r Fitting Benchmark Models}
 best_model_val_index <- c()
@@ -94,7 +98,7 @@ for (sim in 1:n.sims) {
 names(best_model_val_index) <- names(fitted_components_valid[[1]])[best_model_val_index]
 ```
 
-# Fitting Ensemble Models
+## Fitting Ensemble Models
 
 ```{r Fitting Ensemble Models}
 # all_ensemble format
@@ -146,7 +150,6 @@ n.ensembles <- length(all_ensembles)
 # - Ensemble
 # - Simulation
 # - Data
-source('utils/defining_scoring_functions.R')
 
 component_logS <- lapply(
     meta_dens_outsample, FUN = function(x) log(x[, -c(1, 2)] + 1e-6)
@@ -169,9 +172,9 @@ ensemble_CRPS <- calc_crps_ensemble(
 ```
 
 
-# EDA
+## Graphical Results of GoF Measures
 
-```{r}
+```{r Exploratory Data Analysis - Checking NA densities}
 ## NA exploration:
 
 na.SLP <- c()
@@ -341,7 +344,7 @@ legend('topleft',
 #dev.off()
 ```
 
-# Statistical Tests
+## Statistical Tests of GoF Measures
 
 
 ```{r Calc DM and Adj. DM Test Scores}
@@ -381,7 +384,7 @@ ADM_CRPS_ADLPvsADLP <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, 
 ```
 
 
-```{r}
+```{r Calc DM and Adj. DM Test Statistics}
 ## Analysing Log Score test statistics: 
 print("Log Score DM test: SLP vs EW")
 mean(DM_LS_SLPvsEW > qnorm(0.975))
@@ -408,9 +411,7 @@ mean(-ADM_CRPS_ADLPvsSLP > qnorm(0.975))
 ```
 
 
-```{r}
-
-## Statistical test results: Log Scores 
+```{r Graphical Results: Log Scores}
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsSLPvsBMVandEW.pdf"))
 
@@ -470,7 +471,7 @@ ggplot(data=stack(as.data.frame(TestStats_ADLP_SLP )),aes(x=ind,y=values)) +
 ```
 
 
-```{r}
+```{r Graphical Results: CRPS}}
 
 ## Statistical test results: CRPS 
 
@@ -611,6 +612,8 @@ if (F) {
 simulated_reserves <- read.csv(sprintf("simulation/empircal_simulations_ensembles-%s.csv", tri.size), row.names=NULL)
 ```
 
+## Calculating Aggregate Reserve Bias
+
 ```{r Calculate Reserve Bias}
 true_reserves <- c()
 # Calculate true reserves
@@ -635,6 +638,8 @@ quantile_reserve_estimate <- apply(simulated_reserves[, -c(1, 2)], MARGIN = 2, F
 quantile_reserve_bias <- (quantile_reserve_estimate - quantile_reserve)/quantile_reserve
 
 ```
+
+## Graphical Results of Aggregate Reserve Bias
 
 ```{r Exploratory Data Analysis - Reserve Bias Plots}
 
@@ -694,10 +699,10 @@ abline(h = reserve_bias_75Quantile [BMV_ind], col = 'green')
 
 ```
 
-# Investigation over model weights:
+# Investigation over Estimated Model Weights
 
 
-```{r}
+```{r Calculation of model weights across simulations}
 ## Calculate the mean model weights: 
 
 mean_weights_all <- matrix(NA, nrow = 18, ncol = 18)
@@ -720,9 +725,7 @@ mean_weights_subset2 <- apply(model_weights_simul_mat_Subset2, MARGIN=2,FUN=mean
 ```
 
 
-
-
-```{r}
+```{r Graphical Results: Estimated model weights over subsets}
 ##### Plotting model Weights for Subset 1: 
 express <- c(
     expression(GLM[ccODP]),
@@ -773,16 +776,10 @@ ggplot(data=w_M_mean,mapping=aes(x=reorder(Models,-value),y=value)) +
 #dev.off()
 ```
 
+# Appendix C Results
+## Three Subset Fitting
 
-
-
-
-
-
-
-# Appendix C: Three Subset Fitting
-
-```{r}
+```{r Calculating Ensemble using 3 Subset}
 stopifnot(tri.size == 40)
 
 # Note this is currently only defined for triangle size 40
@@ -792,7 +789,7 @@ all_ensembles_3par <- fit_all_partition_ensembles_40_3par(
 )
 ```
 
-```{r echo=TRUE}
+```{r Scoring Metrics over 3 subset ADLP ensemble, echo=TRUE}
 ensemble_dens_3par <- calc_dens_ensemble(meta_dens_outsample, all_ensembles_3par)
 ensemble_logS_3par <- lapply(
     ensemble_dens_3par, FUN = function(x) lapply(x, FUN = function(y) log(y+1e-6))
@@ -833,7 +830,7 @@ ggplot(data=stack(data.frame(mean_score_over_sim_3Subsets_new)), aes(x = ind, y 
 apply(mean_score_over_sim_3Subsets_new, FUN = mean, MARGIN = 2)
 ```
 
-# Appendix C: SLP of SP_LN and GAMLSS_LS
+## SLP of SP_LN and GAMLSS_LS
 
 ```{r SLP of SP_LN and GAMLSS_LS}
 
