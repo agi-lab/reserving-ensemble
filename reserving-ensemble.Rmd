@@ -71,6 +71,10 @@ for (sim in 1:n.sims) {
     meta_mu_outsample[[sim]] <- results_full$meta_mu
     meta_dens_outsample[[sim]] <- results_full$meta_dens
     meta_CDF_outsample[[sim]] <- results_full$meta_CDF
+    
+    if (floor(sim %% (n.sims/4)) == 0) {
+        print(sprintf('... Completed %s of %s simulations...', sim, n.sims))
+    }
 }
     
 })
@@ -164,11 +168,18 @@ names(ensemble_logS) <- names(all_ensembles)
 ```
 
 ```{r Calculate CRPS for each new observation y_k}
+suppressWarnings({
+
 ensemble_CRPS <- calc_crps_ensemble(
     n.sims, 
     fitted_components_outsample, 
     all_ensembles
 )
+
+})
+
+CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) mean(unlist(x))))[1:(n.ensembles-2)]
+#CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
 ```
 
 
@@ -231,7 +242,7 @@ LS_AP_ensembles <- lapply(ensemble_logS, FUN = function(x) average_by_index(out_
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_LogScorebyAccidentPeriodsSLP.pdf"))
 #par(mar = c(3.8, 3.8, 3.8, 0))
-model_names <- colnames(meta_dens_outsample[[1]])[3:20]
+model_names <- colnames(meta_dens_outsample[[1]])[3:(n.models + 2)]
 plot(x=all_ap,y=LS_AP_components[[1]],
      col="grey",ylim=c(-8,0),type="l",main="Log-Score by Accident Periods ",ylab="Mean Log Score",xlab="Accident Periods")
 for (i in 2:length(LS_AP_components)){
@@ -239,7 +250,7 @@ for (i in 2:length(LS_AP_components)){
 }
 
 points(x=all_ap, y=LS_AP_components[[which(model_names == "dens_PPCF")]],col="orange",type="l",lwd=1)
-points(x=all_ap, y=LS_AP_components[[which(model_names == "dens_ZAGA")]],col="brown",type="l",lwd=1)
+# points(x=all_ap, y=LS_AP_components[[which(model_names == "dens_ZAGA")]],col="brown",type="l",lwd=1)
 points(x=all_ap,y=LS_AP_ensembles[[BMV_ind]],col="green",type="l",lwd=1)
 points(x=all_ap,y=LS_AP_ensembles[[1]],col="yellow",type="l",lwd=1)
 points(x=all_ap,y=LS_AP_ensembles[[EW_ind]],col="red",type="l",lwd=1)
@@ -247,7 +258,7 @@ points(x=all_ap,y=LS_AP_ensembles[[EW_ind]],col="red",type="l",lwd=1)
 legend('topright',
        legend=c("Component Models",
                 "PPCF",
-                "ZAGA",
+                # "ZAGA",
                 "Best Models in Validation Set",
                 "SLP", "Equally Weighted Ensemble"),
        col=c("grey", "orange","brown","green","yellow","red"),lty=1,cex=0.6)
@@ -298,9 +309,6 @@ ggplot(data=stack(data.frame(mean_score_over_sim)[, c('ADLP_par0', 'ADLP_par12',
 
 # CRPS with Different Split Points
 corres_splitpoints_SLPincluded<-c(0, split_points)
-
-CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) mean(unlist(x))))[1:(n.ensembles-2)]
-#CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
 
 #par(mar = c(3.8, 3.8, 3.8, 2))
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPSbySplitpoints.pdf"))
@@ -426,9 +434,9 @@ ggplot(data=stack(as.data.frame(TestStats_BMV_EW)),aes(x=ind,y=values)) +
     geom_boxplot() +
     labs(x="Hypothesis tests",y="Log Score") + 
     ggtitle("Distribution of DM and Adjusted DM Statistics (SLP v.s EW & BMV)") + 
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) + 
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) + 
     scale_x_discrete(labels=c('SLP v.s EW(DM)','SLP v.s EW(BMV)', 'SLP v.s EW(Adj.DM)','SLP v.s EW(Adj.BMV)')) + 
-    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", linewidth=1)
 
 #dev.off()
 
@@ -445,9 +453,9 @@ ggplot(data=stack(as.data.frame(TestStats_ADLP_BMV_EW )),aes(x=ind,y=values)) +
     geom_boxplot() +
     labs(x="Hypothesis tests",y="Log Score") +
     ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s EW & BMV)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
     scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s EW(BMV)', 'ADLP v.s EW(Adj.DM)','ADLP v.s EW(Adj.BMV)')) +
-    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", linewidth=1)
 
 #dev.off()
 
@@ -462,9 +470,9 @@ ggplot(data=stack(as.data.frame(TestStats_ADLP_SLP )),aes(x=ind,y=values)) +
     geom_boxplot() +
     labs(x="Hypothesis tests",y="Log Score") +
     ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s SLP)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
     scale_x_discrete(labels=c('ADLP v.s SLP(DM)', 'ADLP v.s SLP(Adj.DM)')) +
-    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", linewidth=1)
 
 #dev.off()
 
@@ -486,7 +494,7 @@ ggplot(data=stack(as.data.frame(TestStats_OptimADLP_BMV)),aes(x=ind,y=values)) +
     geom_boxplot() +
     labs(x="Accident Periods",y="CRPS") +
     ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s BMV)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
     scale_x_discrete(labels=c('Optimal ADLP v.s BMV(DM)', 'Optimal ADLP v.s BMV(Adj.ADM)'))
 
 #dev.off()
@@ -503,7 +511,7 @@ ggplot(data=stack(as.data.frame(TestStats_OptimADLP_EW)),aes(x=ind,y=values)) +
     geom_boxplot() +
     labs(x="Accident Periods",y="CRPS") +
     ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s EW)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
     scale_x_discrete(labels=c('Optimal ADLP v.s EW(DM)', 'Optimal ADLP v.s EW(Adj.ADM)'))
 
 #dev.off()
@@ -519,7 +527,7 @@ ggplot(data=stack(as.data.frame(TestStats_OptimADLP_SLP)),aes(x=ind,y=values)) +
     geom_boxplot() +
     labs(x="Accident Periods",y="CRPS") +
     ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s SLP)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
     scale_x_discrete(labels=c('Optimal ADLP v.s SLP(DM)', 'Optimal ADLP v.s SLP(Adj.ADM)'))
 
 #dev.off()
@@ -536,7 +544,7 @@ ggplot(data=stack(as.data.frame(TestStats_OptimADLP_ADLP)),aes(x=ind,y=values)) 
     geom_boxplot() +
     labs(x="Accident Periods",y="CRPS") +
     ggtitle("Distribution of DM and Adjusted DM Statistics (ADLP 12 v.s ADLP 13)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
     scale_x_discrete(labels=c('ADLP 12 v.s ADLP 13(DM)', 'ADLP 12 v.s ADLP 13(Adj.ADM)'))
 
 #dev.off()
@@ -583,17 +591,20 @@ colnames(central_reserve_estimate) <- names(all_ensembles)
 ```{r Simulating Reserves}
 source('simulation/simulating_ensembles.R')
 
-if (F) {
+if (T) {
   
     total_reserve_simulations = 1000
     
     set.seed(100)
+    
+    suppressWarnings({
     all_reserve_simulations = simulate_reserves(
         n.sims, 
         total_reserve_simulations, 
         fitted_components_outsample, 
         all_ensembles
     )
+    })
 
     all_simulations <- matrix(NA, nrow = n.sims * total_reserve_simulations,ncol = n.ensembles+2)
     for (i in 1:n.ensembles) {
@@ -622,20 +633,26 @@ for (sim in 1:n.sims){
     true_reserves <- c(true_reserves, sum(claims_df_in_out(full_data)$test[, 'aggregate_claims']))
 }
 
-# Central Reserve
-# central_reserve <- mean(true_reserves)
-# central_reserve_bias <- (apply(central_reserve_estimate, 2, mean) - central_reserve)/central_reserve
-
 ## Use Median as it is more stable: 
 relative_diff_centralBias <- (central_reserve_estimate-true_reserves)/true_reserves
-central_reserve_bias <- apply(abs(relative_diff_centralBias[-8, ]), 2, mean)
+central_reserve_bias <- apply(abs(relative_diff_centralBias), 2, median)
 
 
 # 75th Quantile
 
 quantile_reserve <- quantile(true_reserves, 0.75)
-quantile_reserve_estimate <- apply(simulated_reserves[, -c(1, 2)], MARGIN = 2, FUN = function(x) quantile(x, 0.75)) / 10000
-quantile_reserve_bias <- (quantile_reserve_estimate - quantile_reserve)/quantile_reserve
+quantile_reserve_estimate <- matrix(NA, nrow = n.sims, ncol = ncol(simulated_reserves) - 2)
+for (i in 1:n.sims) {
+    sim_reserve <- simulated_reserves[simulated_reserves$Triangle.. == i, -c(1, 2)]
+    quantile_reserve_estimate[i, ] <- apply(sim_reserve, MARGIN = 2, FUN = function(x) quantile(x, 0.75)) / 10000
+}
+colnames(quantile_reserve_estimate) <- colnames(simulated_reserves[, -c(1, 2)])
+relative_diff_75Bias <- (quantile_reserve_estimate - quantile_reserve)/quantile_reserve
+reserve_bias_75Quantile <- apply(abs(relative_diff_75Bias), MARGIN = 2, median)
+
+
+boxplot(relative_diff_centralBias)
+boxplot(relative_diff_75Bias)
 
 ```
 
@@ -655,16 +672,13 @@ mean_reserve_bias <- abs(central_reserve_bias)
 par(mar = c(3.8, 3.8, 3.8, 2))
 plot(x=corres_splitpoints_SLPincluded, y=mean_reserve_bias[-c(EW_ind, BMV_ind)],
      type="p",xlab="Accident Periods",ylab="Mean Aggregate Reserve Bias",
-     main="Mean Absolute Central Reserve Bias v.s. Different split points", , ylim = c(0.09, 0.151))
- # points(x=corres_splitpoints_SLPincluded[which.min(mean_reserve_bias[-c(EW_ind, BMV_ind)])], y=min(mean_reserve_bias[-c(EW_ind, BMV_ind)]),
- #       type="p",col="black",pch=16,cex=1.6)
-
+     main="Mean Absolute Central Reserve Bias v.s. Different split points",
+     ylim = c(min(mean_reserve_bias), max(mean_reserve_bias)))
 points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=mean_reserve_bias[optim_ADLP_index],
        type="p",col="black",pch=16,cex=1.6)
 
-
 points(x=0,y=mean_reserve_bias[1],type="p",col="grey",pch=16,cex=ifelse(which.min(mean_reserve_bias[-c(EW_ind, BMV_ind)]) == 1, 0.8, 1.6))
-legend('topright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
+legend('bottomright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
 abline(h = mean_reserve_bias[EW_ind], col = 'red')
 abline(h = mean_reserve_bias[BMV_ind], col = 'green')
   
@@ -672,26 +686,20 @@ abline(h = mean_reserve_bias[BMV_ind], col = 'green')
 
 # 75th Quantile Reserve
 
-
-
-reserve_bias_75Quantile <- abs(quantile_reserve_bias)
-
 par(mar = c(3.8, 3.8, 3.8, 2))
 
 # pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_RelativeReserveBiasat75Quantile.pdf"))
 
 
-plot(x=corres_splitpoints_SLPincluded, y=reserve_bias_75Quantile [-c(EW_ind, BMV_ind)],
+plot(x=corres_splitpoints_SLPincluded, y=reserve_bias_75Quantile[-c(EW_ind, BMV_ind)],
      type="p",xlab="Accident Periods",ylab="Absolute aggregate Reserve Bias at 75th Quantile",
-     main="Absolute aggregate Reserve Bias at 75th Quantile v.s. Different split points")
-# points(x=corres_splitpoints_SLPincluded[which.min(reserve_bias_75Quantile [-c(EW_ind, BMV_ind)])], y=min(reserve_bias_75Quantile[-c(EW_ind, BMV_ind)]),
-#        type="p",col="black",pch=16,cex=1.6)
-
+     main="Absolute aggregate Reserve Bias at 75th Quantile v.s. Different split points",
+     ylim = c(min(reserve_bias_75Quantile), max(reserve_bias_75Quantile)))
 points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=reserve_bias_75Quantile[optim_ADLP_index ],
        type="p",col="black",pch=16,cex=1.6)
 
 points(x=0,y=reserve_bias_75Quantile [1],type="p",col="grey",pch=16,cex=ifelse(which.min(reserve_bias_75Quantile [-c(EW_ind, BMV_ind)]) == 1, 0.8, 1.6))
-legend('topright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
+legend('bottomright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
 abline(h = reserve_bias_75Quantile [EW_ind], col = 'red')
 abline(h = reserve_bias_75Quantile [BMV_ind], col = 'green')
 
@@ -705,9 +713,9 @@ abline(h = reserve_bias_75Quantile [BMV_ind], col = 'green')
 ```{r Calculation of model weights across simulations}
 ## Calculate the mean model weights: 
 
-mean_weights_all <- matrix(NA, nrow = 18, ncol = 18)
-for(j in 2:19){
-    model_weights_simul_mat <- matrix(NA,nrow=n.sims,ncol=18)
+mean_weights_all <- matrix(NA, ncol = n.models, nrow = length(split_points))
+for(j in 2:(length(split_points)+1)){
+    model_weights_simul_mat <- matrix(NA,nrow=n.sims,ncol=n.models)
     for (i in 1:n.sims){
       model_weights_simul_mat[i,]<-as.vector(unlist(all_ensembles[[j]]$model_weights_simul_sims[[i]][1]))
     }
@@ -716,7 +724,7 @@ for(j in 2:19){
 ## Each row represents the model weights (in subset 1) in each ADLP ensemble
 
 ## Since the weights in subset 2 is trained using all the data, all the ADLP ensembles have the same weights in Subset 2, which is equal to the weights for SLP:
-model_weights_simul_mat_Subset2 <- matrix(NA,nrow=n.sims,ncol=18)
+model_weights_simul_mat_Subset2 <- matrix(NA,nrow=n.sims,ncol=n.models)
 for (i in 1:n.sims){
       model_weights_simul_mat_Subset2[i,]<-as.vector(unlist(all_ensembles[[2]]$model_weights_simul_sims[[i]][2]))
 }
@@ -731,8 +739,8 @@ express <- c(
     expression(GLM[ccODP]),
     expression(GLM[ccGA]),
     expression(GLM[ccLN]),
-    expression(GLM[ZAGA]),
-    expression(GLM[ZALN]),
+    # expression(GLM[ZAGA]),
+    # expression(GLM[ZALN]),
     expression(GLM[hcODP]),
     expression(GLM[hcGA]),
     expression(GLM[hcLN]),
@@ -748,9 +756,13 @@ express <- c(
     expression(GLM[ppcf])
 )
 
-mean_weight_ADLP_dat <- data.frame(Weights=c(t(mean_weights_all)), Models=rep(model_names,times=18),SplitPoint=rep(as.character(corres_splitpoints_SLPincluded[2:19]),each=18))
+mean_weight_ADLP_dat <- data.frame(
+    Weights=c(t(mean_weights_all)), 
+    Models=rep(model_names,times=length(split_points)),
+    SplitPoint=rep(as.character(corres_splitpoints_SLPincluded[2:(length(split_points)+1)]),each=n.models)
+)
 mean_weights_ADLP<-apply(mean_weights_all, FUN=mean,MARGIN=2)
-mean_weight_ADLP_dat$SplitPoint<-factor(mean_weight_ADLP_dat$SplitPoint,levels=as.character(corres_splitpoints_SLPincluded[2:19]))
+mean_weight_ADLP_dat$SplitPoint<-factor(mean_weight_ADLP_dat$SplitPoint,levels=as.character(corres_splitpoints_SLPincluded[2:(length(split_points)+1)]))
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_ModelWeightsSubset1.pdf"))
 ggplot(mean_weight_ADLP_dat, aes(fill=SplitPoint, y=Weights, x=reorder(Models,-Weights))) +

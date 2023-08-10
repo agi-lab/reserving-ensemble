@@ -12,6 +12,8 @@ if (tri.size == 40) {
     fit_all_partition_ensembles <- fit_all_partition_ensembles_40
     split_points <- split_points_40
     calc_crps_ensemble <- calc_crps_ensemble_40
+    simulate_reserves <- simulate_reserves_40
+    predict_component_partitions <- predict_component_partitions_40
     
 } else if (tri.size == 20) {
     source('ensemble/defining_partitions_triangle_20.R')
@@ -21,6 +23,8 @@ if (tri.size == 40) {
     fit_all_partition_ensembles <- fit_all_partition_ensembles_20
     split_points <- split_points_20
     calc_crps_ensemble <- calc_crps_ensemble_20
+    simulate_reserves <- simulate_reserves_20
+    predict_component_partitions <- predict_component_partitions_20
     
 } else {
     stop ("Error, parameter 'tri.size' is not defined correctly.")

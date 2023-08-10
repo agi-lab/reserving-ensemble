@@ -86,6 +86,8 @@ fit_all_partition_ensembles_40 <- function(meta_dens_valid, meta_dens_outsample)
     
     ADLP_par5 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par5_2_40)
     
+    print('... Completed 5 ADLP ensembles...')
+    
     ADLP_par6 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par6_2_40)
     
     ADLP_par7 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par7_2_40)
@@ -96,6 +98,8 @@ fit_all_partition_ensembles_40 <- function(meta_dens_valid, meta_dens_outsample)
     
     ADLP_par10 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par10_2_40)
     
+    print('... Completed 10 ADLP ensembles...')
+    
     ADLP_par11 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par11_2_40)
     
     ADLP_par12 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par12_2_40)
@@ -105,6 +109,8 @@ fit_all_partition_ensembles_40 <- function(meta_dens_valid, meta_dens_outsample)
     ADLP_par14 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par14_2_40)
     
     ADLP_par15 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par15_2_40)
+    
+    print('... Completed 15 ADLP ensembles...')
     
     ADLP_par16 <- fit_ensemble_model(meta_dens_valid, meta_dens_outsample, par16_2_40)
     
@@ -133,6 +139,8 @@ fit_all_partition_ensembles_40 <- function(meta_dens_valid, meta_dens_outsample)
       ADLP_par17=ADLP_par17,
       ADLP_par18=ADLP_par18
     )
+    
+    print('... Completed all ADLP ensembles...')
     return (all_ensembles)
 }
 
@@ -196,6 +204,7 @@ fit_all_partition_ensembles_20 <- function(meta_dens_valid, meta_dens_outsample)
         ADLP_par7=ADLP_par7,
         ADLP_par8=ADLP_par8
     )
+    print('... Completed all ADLP ensembles...')
     return (all_ensembles)
 }
 

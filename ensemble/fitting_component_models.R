@@ -29,7 +29,8 @@ if (!exists('tri.size')) {stop("Size of triangles 'tri.size' should be defined")
 ################################################################################
 
 fit_all_component_models_40 <- function(train.data, test.data) {
-
+    sink(nullfile())
+    
     train.data.numeric <- df.to.numeric(train.data)
     test.data.numeric <- df.to.numeric(test.data)
     y.test <- test.data.numeric$aggregate_claims
@@ -38,107 +39,123 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     ####Basic Models 
     #ODP
     ODP_GLM<-glm(formula=aggregate_claims~factor(origin)+factor(dev),family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_ODPGLM<-cal_dens_ODP(y.test, ODP_GLM,test.data)
-    CDF_ODPGLM<-cal_CDF_ODP(y.test, ODP_GLM,test.data)
-    mu_ODPGLM<-cal_mu_ODP(ODP_GLM,test.data)
+    param_ODPGLM<-fit_param_ODP(ODP_GLM,test.data)
+    dens_ODPGLM<-cal_dens_ODP(y.test, param_ODPGLM)
+    CDF_ODPGLM<-cal_CDF_ODP(y.test, param_ODPGLM)
+    mu_ODPGLM<-cal_mu_ODP(param_ODPGLM)
     
     #Gamma 
     tau_Ga<-5
     Ga_optimTau<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(origin)+factor(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
-    dens_GAGLM<-cal_dens_GA(y.test, Ga_optimTau,tau_Ga,train.data,test.data)
-    CDF_GAGLM<-cal_CDF_GA(y.test, Ga_optimTau,tau_Ga,train.data,test.data)
-    mu_GAGLM<-pmax(cal_mu_GA(Ga_optimTau,tau_Ga,train.data,test.data)-tau_Ga,0)
+    param_GAGLM<-fit_param_GA(Ga_optimTau,train.data,test.data,tau_Ga)
+    dens_GAGLM<-cal_dens_GA(y.test, param_GAGLM)
+    CDF_GAGLM<-cal_CDF_GA(y.test, param_GAGLM)
+    mu_GAGLM<-pmax(cal_mu_GA(param_GAGLM)-tau_Ga,0)
     
     #Log-Normal
     tau_LN<-5
     LN_optimTau<-gamlss(formula=(aggregate_claims+tau_LN)~factor(origin)+factor(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_LNGLM<-cal_dens_LN(y.test, LN_optimTau,tau_LN,train.data,test.data)
-    CDF_LNGLM<-cal_CDF_LN(y.test, LN_optimTau,tau_LN,train.data,test.data)
-    mu_LNGLM<-pmax(cal_mu_LN(LN_optimTau,tau_LN,train.data,test.data)-tau_LN,0)
+    param_LNGLM<-fit_param_LN(LN_optimTau,train.data,test.data,tau_LN)
+    dens_LNGLM<-cal_dens_LN(y.test, param_LNGLM)
+    CDF_LNGLM<-cal_CDF_LN(y.test, param_LNGLM)
+    mu_LNGLM<-pmax(cal_mu_LN(param_LNGLM)-tau_LN,0)
     
     #ZAGA
     gamma_1<-gamlss(formula=aggregate_claims~factor(origin)+factor(dev),nu.formula=~as.numeric(as.character(dev)),data=train.data.numeric,family=ZAGA(mu.link="log",sigma.link = "log", nu.link = "logit"))
-    dens_ZAGA<-cal_dens_ZAGA(y.test, gamma_1,train.data,test.data)
-    CDF_ZAGA<-cal_CDF_ZAGA(y.test, gamma_1,train.data,test.data)
-    mu_ZAGA<-cal_mu_ZAGA(gamma_1,train.data,test.data)
+    param_ZAGA<-fit_param_ZAGA(gamma_1,train.data,test.data)
+    dens_ZAGA<-cal_dens_ZAGA(y.test, param_ZAGA)
+    CDF_ZAGA<-cal_CDF_ZAGA(y.test, param_ZAGA)
+    mu_ZAGA<-cal_mu_ZAGA(param_ZAGA)
     
     #ZALN
     LN_1<-gamlssZadj(y=aggregate_claims,mu.formula = ~factor(origin)+factor(dev),xi0.formula=~as.numeric(as.character(dev)),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_ZALN<-cal_dens_ZALN(y.test, LN_1,train.data,test.data)
-    CDF_ZALN<-cal_CDF_ZALN(y.test, LN_1,train.data,test.data)
-    mu_ZALN<-cal_mu_ZALN(LN_1,train.data,test.data)
+    param_ZALN<-fit_param_ZALN(LN_1,train.data,test.data)
+    dens_ZALN<-cal_dens_ZALN(y.test, param_ZALN)
+    CDF_ZALN<-cal_CDF_ZALN(y.test, param_ZALN)
+    mu_ZALN<-cal_mu_ZALN(param_ZALN)
     
     #### Models With Hoerl Curve
     #Under ODP Assumption
     #R return warning for rank deficient fit for Hoerl Curve ODP
     glm_ODP_Ho_tr1<-glm(formula=aggregate_claims~factor(origin)+log(dev)+dev,family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_ODPHo<-cal_dens_ODP(y.test, glm_ODP_Ho_tr1,test.data.numeric)
-    CDF_ODPHo<-cal_CDF_ODP(y.test, glm_ODP_Ho_tr1,test.data.numeric)
-    mu_ODPHo<-cal_mu_ODP(glm_ODP_Ho_tr1,test.data.numeric)
+    param_ODPHo<-fit_param_ODP(glm_ODP_Ho_tr1,test.data.numeric)
+    dens_ODPHo<-cal_dens_ODP(y.test, param_ODPHo)
+    CDF_ODPHo<-cal_CDF_ODP(y.test, param_ODPHo)
+    mu_ODPHo<-cal_mu_ODP(param_ODPHo)
     
     #Under Gamma Assumption
     glm_Ga_Ho_tr1<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(origin)+log(dev)+dev,data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
-    dens_GaHo<-cal_dens_GA(y.test, glm_Ga_Ho_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_GaHo<-cal_CDF_GA(y.test, glm_Ga_Ho_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_GaHo<-pmax(cal_mu_GA(glm_Ga_Ho_tr1,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_GaHo<-fit_param_GA(glm_Ga_Ho_tr1,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_GaHo<-cal_dens_GA(y.test, param_GaHo)
+    CDF_GaHo<-cal_CDF_GA(y.test, param_GaHo)
+    mu_GaHo<-pmax(cal_mu_GA(param_GaHo)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     glm_LN_Ho_tr1<-gamlss(formula=(aggregate_claims+tau_LN)~factor(origin)+log(dev)+dev,data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_LNHo<-cal_dens_LN(y.test, glm_LN_Ho_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_LNHo<-cal_CDF_LN(y.test, glm_LN_Ho_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    mu_LNHo<-pmax(cal_mu_LN(glm_LN_Ho_tr1,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_LNHo<-fit_param_LN(glm_LN_Ho_tr1,train.data.numeric,test.data.numeric,tau_LN)
+    dens_LNHo<-cal_dens_LN(y.test, param_LNHo)
+    CDF_LNHo<-cal_CDF_LN(y.test, param_LNHo)
+    mu_LNHo<-pmax(cal_mu_LN(param_LNHo)-tau_LN,0)
     
     #### Models With Calendar Periods
     #Under ODP Assumption
     glm_ODP_Cal_tr1<-glm(formula=aggregate_claims~factor(dev)+calendar,family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_ODPCal<-cal_dens_ODP(y.test, glm_ODP_Cal_tr1,test.data.numeric)
-    CDF_ODPCal<-cal_CDF_ODP(y.test, glm_ODP_Cal_tr1,test.data.numeric)
-    mu_ODPCal<-cal_mu_ODP(glm_ODP_Cal_tr1,test.data.numeric)
+    param_ODPCal<-fit_param_ODP(glm_ODP_Cal_tr1,test.data.numeric)
+    dens_ODPCal<-cal_dens_ODP(y.test, param_ODPCal)
+    CDF_ODPCal<-cal_CDF_ODP(y.test, param_ODPCal)
+    mu_ODPCal<-cal_mu_ODP(param_ODPCal)
     
     #Under Gamma Assumption
     glm_Ga_Cal_tr1<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(dev)+calendar,data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
-    dens_GaCal<-cal_dens_GA(y.test, glm_Ga_Cal_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_GaCal<-cal_CDF_GA(y.test, glm_Ga_Cal_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_GaCal<-pmax(cal_mu_GA(glm_Ga_Cal_tr1,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_GaCal<-fit_param_GA(glm_Ga_Cal_tr1,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_GaCal<-cal_dens_GA(y.test, param_GaCal)
+    CDF_GaCal<-cal_CDF_GA(y.test, param_GaCal)
+    mu_GaCal<-pmax(cal_mu_GA(param_GaCal)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     glm_LN_Cal_tr1<-gamlss(formula=(aggregate_claims+tau_LN)~factor(dev)+calendar,data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_LNCal<-cal_dens_LN(y.test, glm_LN_Cal_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_LNCal<-cal_CDF_LN(y.test, glm_LN_Cal_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    mu_LNCal<-pmax(cal_mu_LN(glm_LN_Cal_tr1,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_LNCal<-fit_param_LN(glm_LN_Cal_tr1,train.data.numeric,test.data.numeric,tau_LN)
+    dens_LNCal<-cal_dens_LN(y.test, param_LNCal)
+    CDF_LNCal<-cal_CDF_LN(y.test, param_LNCal)
+    mu_LNCal<-pmax(cal_mu_LN(param_LNCal)-tau_LN,0)
     
     ####Smoothing Spline
     #Under Normal Assumption
     sp_Normal<-gamlss(formula=aggregate_claims~scs(origin)+scs(dev),data=train.data.numeric,family=NO(),trace=FALSE)
-    dens_SpNormal<-cal_dens_Normal(y.test, sp_Normal,train.data.numeric,test.data.numeric)
-    CDF_SpNormal<-cal_CDF_Normal(y.test, sp_Normal,train.data.numeric,test.data.numeric)
-    mu_SpNormal<-cal_mu_Normal(sp_Normal,train.data.numeric,test.data.numeric)
+    param_SpNormal<-fit_param_NO(sp_Normal,train.data.numeric,test.data.numeric)
+    dens_SpNormal<-cal_dens_Normal(y.test, param_SpNormal)
+    CDF_SpNormal<-cal_CDF_Normal(y.test, param_SpNormal)
+    mu_SpNormal<-cal_mu_Normal(param_SpNormal)
     
     #Under Gamma Assumption
     sp_Gamma<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(origin)+scs(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-    dens_SpGamma<-cal_dens_GA(y.test, sp_Gamma,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_SpGamma<-cal_CDF_GA(y.test, sp_Gamma,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_SpGamma<-pmax(cal_mu_GA(sp_Gamma,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_SpGamma<-fit_param_GA(sp_Gamma,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_SpGamma<-cal_dens_GA(y.test, param_SpGamma)
+    CDF_SpGamma<-cal_CDF_GA(y.test, param_SpGamma)
+    mu_SpGamma<-pmax(cal_mu_GA(param_SpGamma)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     sp_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(origin)+scs(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
-    dens_SpLN<-cal_dens_LN(y.test, sp_LN,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_SpLN<-cal_CDF_LN(y.test, sp_LN,tau_LN,train.data.numeric,test.data.numeric)
-    mu_SpLN<-pmax(cal_mu_LN(sp_LN,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_SpLN<-fit_param_LN(sp_LN,train.data.numeric,test.data.numeric,tau_LN)
+    dens_SpLN<-cal_dens_LN(y.test, param_SpLN)
+    CDF_SpLN<-cal_CDF_LN(y.test, param_SpLN)
+    mu_SpLN<-pmax(cal_mu_LN(param_SpLN)-tau_LN,0)
     
     ####GAMLSS
     #GAMLSS 2: Smooth Effects on the predictor for sigma term
     #Under Gamma Assumption
     gamlss_GA<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-    dens_GaGAMLSS<-cal_dens_GA_Gamlss(y.test, gamlss_GA,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_GaGAMLSS<-cal_CDF_GA_Gamlss(y.test, gamlss_GA,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_GaGAMLSS<-pmax(cal_mu_GA_Gamlss(gamlss_GA,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_GaGAMLSS<-fit_param_GAGamlss(gamlss_GA,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_GaGAMLSS<-cal_dens_GA_Gamlss(y.test, param_GaGAMLSS)
+    CDF_GaGAMLSS<-cal_CDF_GA_Gamlss(y.test, param_GaGAMLSS)
+    mu_GaGAMLSS<-pmax(cal_mu_GA_Gamlss(param_GaGAMLSS)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     gamlss_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
-    dens_LNGAMLSS<-cal_dens_LN_Gamlss(y.test, gamlss_LN,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_LNGAMLSS<-cal_CDF_LN_Gamlss(y.test, gamlss_LN,tau_LN,train.data.numeric,test.data.numeric)
-    mu_LNGAMLSS<-pmax(cal_mu_LN_Gamlss(gamlss_LN,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_LNGAMLSS<-fit_param_LNGamlss(gamlss_LN,train.data.numeric,test.data.numeric,tau_LN)
+    dens_LNGAMLSS<-cal_dens_LN_Gamlss(y.test, param_LNGAMLSS)
+    CDF_LNGAMLSS<-cal_CDF_LN_Gamlss(y.test, param_LNGAMLSS)
+    mu_LNGAMLSS<-pmax(cal_mu_LN_Gamlss(param_LNGAMLSS)-tau_LN,0)
     
     ### Claims Count Information
     fit_nc<-glm(notif_count~factor(origin)+factor(dev),data=train.data,family=quasipoisson(link="log"))
@@ -155,18 +172,20 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     PPCI <- calc_PPCI(N, train.data)
     ##Fitting a ODP model on PPCI
     fit_ODP_ppci<-glm(PPCI~factor(dev),family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_PPCI<-cal_dens_PPCI(y.test, fit_ODP_ppci,N,test.data)
-    CDF_PPCI<-cal_CDF_PPCI(y.test, fit_ODP_ppci,N,test.data)
-    mu_PPCI<-cal_mu_PPCI(fit_ODP_ppci,N,test.data)
+    param_PPCI<-fit_param_PPCI(fit_ODP_ppci,N,test.data)
+    dens_PPCI<-cal_dens_PPCI(y.test, param_PPCI)
+    CDF_PPCI<-cal_CDF_PPCI(y.test, param_PPCI)
+    mu_PPCI<-cal_mu_PPCI(param_PPCI)
     
     ###PPCF
     #Alternatively, fit a ODP on finalization claims that depends on development periods
     odp_FC<-glm(settle_count~factor(dev),data=train.data,family=quasipoisson(link="log"))
     PPCF_data <- calc_PPCF(N, train.data) 
     ODP_PPCF<-glm(PPCF~OT,family=quasipoisson(link="log"),data=PPCF_data)
-    dens_PPCF <- cal_dens_PPCF(y.test, odp_FC,ODP_PPCF, N, train.data,test.data) 
-    CDF_PPCF <- cal_CDF_PPCF(y.test, odp_FC,ODP_PPCF,N,train.data,test.data)
-    mu_PPCF<-cal_mu_PPCF(odp_FC,ODP_PPCF,N, train.data,test.data)
+    param_PPCF <- fit_param_PPCF(odp_FC,ODP_PPCF, N, train.data,test.data) 
+    dens_PPCF <- cal_dens_PPCF(y.test, param_PPCF)
+    CDF_PPCF <- cal_CDF_PPCF(y.test, param_PPCF)
+    mu_PPCF<-cal_mu_PPCF(param_PPCF)
     
     ################################################################################
     ################################################################################
@@ -265,6 +284,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
       CDF_PPCF=CDF_PPCF
     )
     
+    sink()
     return (list(component_models=component_models, meta_mu=meta_mu, meta_dens=meta_dens, meta_CDF=meta_CDF))
 }
 
@@ -272,7 +292,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
 ### We exclude ZALN and ZAGA as there are no zero incremental claims for 10x10 and 20x20 
 
 fit_all_component_models_20 <- function(train.data, test.data) {
-    
+    sink(nullfile())
     
     train.data.numeric <- df.to.numeric(train.data)
     test.data.numeric <- df.to.numeric(test.data)
@@ -282,97 +302,109 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     ####Basic Models 
     #ODP
     ODP_GLM<-glm(formula=aggregate_claims~factor(origin)+factor(dev),family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_ODPGLM<-cal_dens_ODP(y.test, ODP_GLM,test.data)
-    CDF_ODPGLM<-cal_CDF_ODP(y.test, ODP_GLM,test.data)
-    mu_ODPGLM<-cal_mu_ODP(ODP_GLM,test.data)
+    param_ODPGLM<-fit_param_ODP(ODP_GLM,test.data)
+    dens_ODPGLM<-cal_dens_ODP(y.test, param_ODPGLM)
+    CDF_ODPGLM<-cal_CDF_ODP(y.test, param_ODPGLM)
+    mu_ODPGLM<-cal_mu_ODP(param_ODPGLM)
     
     #Gamma 
     tau_Ga<-5
     Ga_optimTau<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(origin)+factor(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
-    dens_GAGLM<-cal_dens_GA(y.test, Ga_optimTau,tau_Ga,train.data,test.data)
-    CDF_GAGLM<-cal_CDF_GA(y.test, Ga_optimTau,tau_Ga,train.data,test.data)
-    mu_GAGLM<-pmax(cal_mu_GA(Ga_optimTau,tau_Ga,train.data,test.data)-tau_Ga,0)
+    param_GAGLM<-fit_param_GA(Ga_optimTau,train.data,test.data,tau_Ga)
+    dens_GAGLM<-cal_dens_GA(y.test, param_GAGLM)
+    CDF_GAGLM<-cal_CDF_GA(y.test, param_GAGLM)
+    mu_GAGLM<-pmax(cal_mu_GA(param_GAGLM)-tau_Ga,0)
     
     #Log-Normal
     tau_LN<-5
     LN_optimTau<-gamlss(formula=(aggregate_claims+tau_LN)~factor(origin)+factor(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_LNGLM<-cal_dens_LN(y.test, LN_optimTau,tau_LN,train.data,test.data)
-    CDF_LNGLM<-cal_CDF_LN(y.test, LN_optimTau,tau_LN,train.data,test.data)
-    mu_LNGLM<-pmax(cal_mu_LN(LN_optimTau,tau_LN,train.data,test.data)-tau_LN,0)
-    
-    
+    param_LNGLM<-fit_param_LN(LN_optimTau,train.data,test.data,tau_LN)
+    dens_LNGLM<-cal_dens_LN(y.test, param_LNGLM)
+    CDF_LNGLM<-cal_CDF_LN(y.test, param_LNGLM)
+    mu_LNGLM<-pmax(cal_mu_LN(param_LNGLM)-tau_LN,0)
     
     #### Models With Hoerl Curve
     #Under ODP Assumption
     #R return warning for rank deficient fit for Hoerl Curve ODP
     glm_ODP_Ho_tr1<-glm(formula=aggregate_claims~factor(origin)+log(dev)+dev,family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_ODPHo<-cal_dens_ODP(y.test, glm_ODP_Ho_tr1,test.data.numeric)
-    CDF_ODPHo<-cal_CDF_ODP(y.test, glm_ODP_Ho_tr1,test.data.numeric)
-    mu_ODPHo<-cal_mu_ODP(glm_ODP_Ho_tr1,test.data.numeric)
+    param_ODPHo<-fit_param_ODP(glm_ODP_Ho_tr1,test.data.numeric)
+    dens_ODPHo<-cal_dens_ODP(y.test, param_ODPHo)
+    CDF_ODPHo<-cal_CDF_ODP(y.test, param_ODPHo)
+    mu_ODPHo<-cal_mu_ODP(param_ODPHo)
     
     #Under Gamma Assumption
     glm_Ga_Ho_tr1<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(origin)+log(dev)+dev,data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
-    dens_GaHo<-cal_dens_GA(y.test, glm_Ga_Ho_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_GaHo<-cal_CDF_GA(y.test, glm_Ga_Ho_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_GaHo<-pmax(cal_mu_GA(glm_Ga_Ho_tr1,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_GaHo<-fit_param_GA(glm_Ga_Ho_tr1,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_GaHo<-cal_dens_GA(y.test, param_GaHo)
+    CDF_GaHo<-cal_CDF_GA(y.test, param_GaHo)
+    mu_GaHo<-pmax(cal_mu_GA(param_GaHo)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     glm_LN_Ho_tr1<-gamlss(formula=(aggregate_claims+tau_LN)~factor(origin)+log(dev)+dev,data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_LNHo<-cal_dens_LN(y.test, glm_LN_Ho_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_LNHo<-cal_CDF_LN(y.test, glm_LN_Ho_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    mu_LNHo<-pmax(cal_mu_LN(glm_LN_Ho_tr1,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_LNHo<-fit_param_LN(glm_LN_Ho_tr1,train.data.numeric,test.data.numeric,tau_LN)
+    dens_LNHo<-cal_dens_LN(y.test, param_LNHo)
+    CDF_LNHo<-cal_CDF_LN(y.test, param_LNHo)
+    mu_LNHo<-pmax(cal_mu_LN(param_LNHo)-tau_LN,0)
     
     #### Models With Calendar Periods
     #Under ODP Assumption
     glm_ODP_Cal_tr1<-glm(formula=aggregate_claims~factor(dev)+calendar,family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_ODPCal<-cal_dens_ODP(y.test, glm_ODP_Cal_tr1,test.data.numeric)
-    CDF_ODPCal<-cal_CDF_ODP(y.test, glm_ODP_Cal_tr1,test.data.numeric)
-    mu_ODPCal<-cal_mu_ODP(glm_ODP_Cal_tr1,test.data.numeric)
+    param_ODPCal<-fit_param_ODP(glm_ODP_Cal_tr1,test.data.numeric)
+    dens_ODPCal<-cal_dens_ODP(y.test, param_ODPCal)
+    CDF_ODPCal<-cal_CDF_ODP(y.test, param_ODPCal)
+    mu_ODPCal<-cal_mu_ODP(param_ODPCal)
     
     #Under Gamma Assumption
     glm_Ga_Cal_tr1<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(dev)+calendar,data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
-    dens_GaCal<-cal_dens_GA(y.test, glm_Ga_Cal_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_GaCal<-cal_CDF_GA(y.test, glm_Ga_Cal_tr1,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_GaCal<-pmax(cal_mu_GA(glm_Ga_Cal_tr1,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_GaCal<-fit_param_GA(glm_Ga_Cal_tr1,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_GaCal<-cal_dens_GA(y.test, param_GaCal)
+    CDF_GaCal<-cal_CDF_GA(y.test, param_GaCal)
+    mu_GaCal<-pmax(cal_mu_GA(param_GaCal)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     glm_LN_Cal_tr1<-gamlss(formula=(aggregate_claims+tau_LN)~factor(dev)+calendar,data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
-    dens_LNCal<-cal_dens_LN(y.test, glm_LN_Cal_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_LNCal<-cal_CDF_LN(y.test, glm_LN_Cal_tr1,tau_LN,train.data.numeric,test.data.numeric)
-    mu_LNCal<-pmax(cal_mu_LN(glm_LN_Cal_tr1,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_LNCal<-fit_param_LN(glm_LN_Cal_tr1,train.data.numeric,test.data.numeric,tau_LN)
+    dens_LNCal<-cal_dens_LN(y.test, param_LNCal)
+    CDF_LNCal<-cal_CDF_LN(y.test, param_LNCal)
+    mu_LNCal<-pmax(cal_mu_LN(param_LNCal)-tau_LN,0)
     
     ####Smoothing Spline
     #Under Normal Assumption
     sp_Normal<-gamlss(formula=aggregate_claims~scs(origin)+scs(dev),data=train.data.numeric,family=NO(),trace=FALSE)
-    dens_SpNormal<-cal_dens_Normal(y.test, sp_Normal,train.data.numeric,test.data.numeric)
-    CDF_SpNormal<-cal_CDF_Normal(y.test, sp_Normal,train.data.numeric,test.data.numeric)
-    mu_SpNormal<-cal_mu_Normal(sp_Normal,train.data.numeric,test.data.numeric)
+    param_SpNormal<-fit_param_NO(sp_Normal,train.data.numeric,test.data.numeric)
+    dens_SpNormal<-cal_dens_Normal(y.test, param_SpNormal)
+    CDF_SpNormal<-cal_CDF_Normal(y.test, param_SpNormal)
+    mu_SpNormal<-cal_mu_Normal(param_SpNormal)
     
     #Under Gamma Assumption
     sp_Gamma<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(origin)+scs(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-    dens_SpGamma<-cal_dens_GA(y.test, sp_Gamma,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_SpGamma<-cal_CDF_GA(y.test, sp_Gamma,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_SpGamma<-pmax(cal_mu_GA(sp_Gamma,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_SpGamma<-fit_param_GA(sp_Gamma,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_SpGamma<-cal_dens_GA(y.test, param_SpGamma)
+    CDF_SpGamma<-cal_CDF_GA(y.test, param_SpGamma)
+    mu_SpGamma<-pmax(cal_mu_GA(param_SpGamma)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     sp_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(origin)+scs(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
-    dens_SpLN<-cal_dens_LN(y.test, sp_LN,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_SpLN<-cal_CDF_LN(y.test, sp_LN,tau_LN,train.data.numeric,test.data.numeric)
-    mu_SpLN<-pmax(cal_mu_LN(sp_LN,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_SpLN<-fit_param_LN(sp_LN,train.data.numeric,test.data.numeric,tau_LN)
+    dens_SpLN<-cal_dens_LN(y.test, param_SpLN)
+    CDF_SpLN<-cal_CDF_LN(y.test, param_SpLN)
+    mu_SpLN<-pmax(cal_mu_LN(param_SpLN)-tau_LN,0)
     
     ####GAMLSS
     #GAMLSS 2: Smooth Effects on the predictor for sigma term
     #Under Gamma Assumption
     gamlss_GA<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-    dens_GaGAMLSS<-cal_dens_GA_Gamlss(y.test, gamlss_GA,tau_Ga,train.data.numeric,test.data.numeric)
-    CDF_GaGAMLSS<-cal_CDF_GA_Gamlss(y.test, gamlss_GA,tau_Ga,train.data.numeric,test.data.numeric)
-    mu_GaGAMLSS<-pmax(cal_mu_GA_Gamlss(gamlss_GA,tau_Ga,train.data.numeric,test.data.numeric)-tau_Ga,0)
+    param_GaGAMLSS<-fit_param_GAGamlss(gamlss_GA,train.data.numeric,test.data.numeric,tau_Ga)
+    dens_GaGAMLSS<-cal_dens_GA_Gamlss(y.test, param_GaGAMLSS)
+    CDF_GaGAMLSS<-cal_CDF_GA_Gamlss(y.test, param_GaGAMLSS)
+    mu_GaGAMLSS<-pmax(cal_mu_GA_Gamlss(param_GaGAMLSS)-tau_Ga,0)
     
     #Under Log-Normal Assumption
     gamlss_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
-    dens_LNGAMLSS<-cal_dens_LN_Gamlss(y.test, gamlss_LN,tau_LN,train.data.numeric,test.data.numeric)
-    CDF_LNGAMLSS<-cal_CDF_LN_Gamlss(y.test, gamlss_LN,tau_LN,train.data.numeric,test.data.numeric)
-    mu_LNGAMLSS<-pmax(cal_mu_LN_Gamlss(gamlss_LN,tau_LN,train.data.numeric,test.data.numeric)-tau_LN,0)
+    param_LNGAMLSS<-fit_param_LNGamlss(gamlss_LN,train.data.numeric,test.data.numeric,tau_LN)
+    dens_LNGAMLSS<-cal_dens_LN_Gamlss(y.test, param_LNGAMLSS)
+    CDF_LNGAMLSS<-cal_CDF_LN_Gamlss(y.test, param_LNGAMLSS)
+    mu_LNGAMLSS<-pmax(cal_mu_LN_Gamlss(param_LNGAMLSS)-tau_LN,0)
     
     ### Claims Count Information
     fit_nc<-glm(notif_count~factor(origin)+factor(dev),data=train.data,family=quasipoisson(link="log"))
@@ -381,7 +413,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     N[1]<-sum(train.data[train.data$origin==1,]$notif_count)
     for (i in 2:tri.size){
         N[i]<- sum(train.data[train.data$origin==i,]$notif_count) + 
-            sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0))
+            sum(round(predict(fit_nc,newdata=test.data[test.data$origin==i,],type="response"),0)) 
     }
     
     ###PPCI
@@ -389,18 +421,20 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     PPCI <- calc_PPCI(N, train.data)
     ##Fitting a ODP model on PPCI
     fit_ODP_ppci<-glm(PPCI~factor(dev),family=quasipoisson(link="log"),data=train.data.numeric)
-    dens_PPCI<-cal_dens_PPCI(y.test, fit_ODP_ppci,N,test.data)
-    CDF_PPCI<-cal_CDF_PPCI(y.test, fit_ODP_ppci,N,test.data)
-    mu_PPCI<-cal_mu_PPCI(fit_ODP_ppci,N,test.data)
+    param_PPCI<-fit_param_PPCI(fit_ODP_ppci,N,test.data)
+    dens_PPCI<-cal_dens_PPCI(y.test, param_PPCI)
+    CDF_PPCI<-cal_CDF_PPCI(y.test, param_PPCI)
+    mu_PPCI<-cal_mu_PPCI(param_PPCI)
     
     ###PPCF
     #Alternatively, fit a ODP on finalization claims that depends on development periods
     odp_FC<-glm(settle_count~factor(dev),data=train.data,family=quasipoisson(link="log"))
     PPCF_data <- calc_PPCF(N, train.data) 
     ODP_PPCF<-glm(PPCF~OT,family=quasipoisson(link="log"),data=PPCF_data)
-    dens_PPCF <- cal_dens_PPCF(y.test, odp_FC,ODP_PPCF, N, train.data,test.data) 
-    CDF_PPCF <- cal_CDF_PPCF(y.test, odp_FC,ODP_PPCF,N,train.data,test.data)
-    mu_PPCF<-cal_mu_PPCF(odp_FC,ODP_PPCF,N, train.data,test.data)
+    param_PPCF <- fit_param_PPCF(odp_FC,ODP_PPCF, N, train.data,test.data) 
+    dens_PPCF <- cal_dens_PPCF(y.test, param_PPCF)
+    CDF_PPCF <- cal_CDF_PPCF(y.test, param_PPCF)
+    mu_PPCF<-cal_mu_PPCF(param_PPCF)
     
     ################################################################################
     ################################################################################
@@ -491,6 +525,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
         CDF_PPCF=CDF_PPCF
     )
     
+    sink()
     return (list(component_models=component_models, meta_mu=meta_mu, meta_dens=meta_dens, meta_CDF=meta_CDF))
 }
 

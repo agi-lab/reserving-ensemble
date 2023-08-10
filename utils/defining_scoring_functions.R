@@ -71,7 +71,6 @@ calc_crps_ensemble_40 <- function(n.sims, component_models, ensemble_models) {
     }
     
     for (s in 1:n.sims) {
-        # s <- 1
         set.seed(20200130+s)
         
         fit_ODP_GLM = component_models[[s]]$fit_ODP_GLM
@@ -107,28 +106,28 @@ calc_crps_ensemble_40 <- function(n.sims, component_models, ensemble_models) {
         # This should be a list of length 18 for each component, each with a 
         # length(z) x nrow(newdata) matrix
         
+        sink(nullfile())
         pred_CDF <- list(
-            cal_CDF_ODP(z, fit_ODP_GLM, newdata, new_y = T),
-            cal_CDF_GA(z, fit_GAGLM, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_LNGLM, tau_LN, data, newdata, new_y = T),
-            cal_CDF_ZAGA(z, fit_ZAGA, data, newdata, new_y = T),
-            cal_CDF_ZALN(z, fit_ZALN, data, newdata, new_y = T),
-            cal_CDF_ODP(z, fit_ODPHo, newdata, new_y = T),
-            cal_CDF_GA(z, fit_GaHo, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_LNHo, tau_LN, data, newdata, new_y = T),
-            cal_CDF_ODP(z, fit_ODPCal, newdata, new_y = T),
-            cal_CDF_GA(z, fit_GaCal, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_LNCal, tau_LN, data, newdata, new_y = T),
-            cal_CDF_Normal(z, fit_SpNormal, data, newdata, new_y = T),
-            cal_CDF_GA(z, fit_SpGamma, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_SpLN, tau_LN, data, newdata, new_y = T),
-            cal_CDF_GA_Gamlss(z, fit_GaGAMLSS, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN_Gamlss(z, fit_LNGAMLSS, tau_LN, data, newdata, new_y = T),
-            cal_CDF_PPCI(z, fit_PPCI$model, fit_PPCI$N, newdata, new_y = T),
-            cal_CDF_PPCF(z, fit_PPCF$model_subCount, fit_PPCF$model_subPayments, fit_PPCF$N, data, newdata, new_y = T)
+            cal_CDF_ODP(z, fit_param_ODP(fit_ODP_GLM, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_GAGLM, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_LNGLM, data, newdata, tau_LN), new_y = T),
+            cal_CDF_ZAGA(z, fit_param_ZAGA(fit_ZAGA, data, newdata), new_y = T),
+            cal_CDF_ZALN(z, fit_param_ZALN(fit_ZALN, data, newdata), new_y = T),
+            cal_CDF_ODP(z, fit_param_ODP(fit_ODPHo, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_GaHo, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_LNHo, data, newdata, tau_LN), new_y = T),
+            cal_CDF_ODP(z, fit_param_ODP(fit_ODPCal, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_GaCal, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_LNCal, data, newdata, tau_LN), new_y = T),
+            cal_CDF_Normal(z, fit_param_NO(fit_SpNormal, data, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_SpGamma, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_SpLN, data, newdata, tau_LN), new_y = T),
+            cal_CDF_GA_Gamlss(z, fit_param_GAGamlss(fit_GaGAMLSS, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN_Gamlss(z, fit_param_LNGamlss(fit_LNGAMLSS, data, newdata, tau_LN), new_y = T),
+            cal_CDF_PPCI(z, fit_param_PPCI(fit_PPCI$model, fit_PPCI$N, newdata), new_y = T),
+            cal_CDF_PPCF(z, fit_param_PPCF(fit_PPCF$model_subCount, fit_PPCF$model_subPayments, fit_PPCF$N, data, newdata), new_y = T)
         )
-        
-        
+        sink()
         
         for (j in 1:n.ensembles){
             ensemble <- ensemble_models[[j]]
@@ -160,9 +159,13 @@ calc_crps_ensemble_40 <- function(n.sims, component_models, ensemble_models) {
             crps_ensembles[[j]][[s]] <- crps[order(names(crps))]
         }
         
+        if (floor(s %% (n.sims/4)) == 0) {
+            print(sprintf('... Completed %s of %s simulations...', s, n.sims))
+        }
     }
     
     names(crps_ensembles) <- names(ensemble_models)
+    
     return(crps_ensembles)
 }
 
@@ -183,7 +186,6 @@ calc_crps_ensemble_20 <- function(n.sims, component_models, ensemble_models) {
     }
     
     for (s in 1:n.sims) {
-        # s <- 1
         set.seed(20200130+s)
         
         fit_ODP_GLM = component_models[[s]]$fit_ODP_GLM
@@ -219,25 +221,26 @@ calc_crps_ensemble_20 <- function(n.sims, component_models, ensemble_models) {
         # This should be a list of length 18 for each component, each with a 
         # length(z) x nrow(newdata) matrix
         
+        sink(nullfile())
         pred_CDF <- list(
-            cal_CDF_ODP(z, fit_ODP_GLM, newdata, new_y = T),
-            cal_CDF_GA(z, fit_GAGLM, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_LNGLM, tau_LN, data, newdata, new_y = T),
-            cal_CDF_ODP(z, fit_ODPHo, newdata, new_y = T),
-            cal_CDF_GA(z, fit_GaHo, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_LNHo, tau_LN, data, newdata, new_y = T),
-            cal_CDF_ODP(z, fit_ODPCal, newdata, new_y = T),
-            cal_CDF_GA(z, fit_GaCal, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_LNCal, tau_LN, data, newdata, new_y = T),
-            cal_CDF_Normal(z, fit_SpNormal, data, newdata, new_y = T),
-            cal_CDF_GA(z, fit_SpGamma, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN(z, fit_SpLN, tau_LN, data, newdata, new_y = T),
-            cal_CDF_GA_Gamlss(z, fit_GaGAMLSS, tau_Ga, data, newdata, new_y = T),
-            cal_CDF_LN_Gamlss(z, fit_LNGAMLSS, tau_LN, data, newdata, new_y = T),
-            cal_CDF_PPCI(z, fit_PPCI$model, fit_PPCI$N, newdata, new_y = T),
-            cal_CDF_PPCF(z, fit_PPCF$model_subCount, fit_PPCF$model_subPayments, fit_PPCF$N, data, newdata, new_y = T)
+            cal_CDF_ODP(z, fit_param_ODP(fit_ODP_GLM, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_GAGLM, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_LNGLM, data, newdata, tau_LN), new_y = T),
+            cal_CDF_ODP(z, fit_param_ODP(fit_ODPHo, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_GaHo, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_LNHo, data, newdata, tau_LN), new_y = T),
+            cal_CDF_ODP(z, fit_param_ODP(fit_ODPCal, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_GaCal, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_LNCal, data, newdata, tau_LN), new_y = T),
+            cal_CDF_Normal(z, fit_param_NO(fit_SpNormal, data, newdata), new_y = T),
+            cal_CDF_GA(z, fit_param_GA(fit_SpGamma, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN(z, fit_param_LN(fit_SpLN, data, newdata, tau_LN), new_y = T),
+            cal_CDF_GA_Gamlss(z, fit_param_GAGamlss(fit_GaGAMLSS, data, newdata, tau_Ga), new_y = T),
+            cal_CDF_LN_Gamlss(z, fit_param_LNGamlss(fit_LNGAMLSS, data, newdata, tau_LN), new_y = T),
+            cal_CDF_PPCI(z, fit_param_PPCI(fit_PPCI$model, fit_PPCI$N, newdata), new_y = T),
+            cal_CDF_PPCF(z, fit_param_PPCF(fit_PPCF$model_subCount, fit_PPCF$model_subPayments, fit_PPCF$N, data, newdata), new_y = T)
         )
-        
+        sink()
         
         
         for (j in 1:n.ensembles){
@@ -270,9 +273,13 @@ calc_crps_ensemble_20 <- function(n.sims, component_models, ensemble_models) {
             crps_ensembles[[j]][[s]] <- crps[order(names(crps))]
         }
         
+        if (floor(s %% (n.sims/4)) == 0) {
+            print(sprintf('... Completed %s of %s simulations...', s, n.sims))
+        }
     }
     
     names(crps_ensembles) <- names(ensemble_models)
+    
     return(crps_ensembles)
 }
 
