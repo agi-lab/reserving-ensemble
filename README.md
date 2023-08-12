@@ -103,7 +103,7 @@ The following R file is used:
 
 This section uses the calculated densities of the component models to calculate the
 required model weights for each component model for each ADLP partition. The estimation 
-of the 'model weights for each ADLP parition' is the fitting process of the ensemble model.
+of the 'model weights' for each ADLP partition is the fitting process of each ensemble model.
 
 #### 4) Analysis of Ensemble Models
 
