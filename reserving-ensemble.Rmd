@@ -9,7 +9,7 @@ output: html_notebook
 # NOTE remember to 'restart R and clear all outputs' if changing triangle size
 # Number of triangles/simulations
 n.sims <- 100
-tri.size <- 40
+tri.size <-40
 ## Note: the current code only supports triangle size of 20 x 20 and 40 x 40 
 
 source('utils/load_required_packages.R')
@@ -18,13 +18,14 @@ source('ensemble/defining_component_functions.R')
 source('ensemble/fitting_component_models.R')
 source('ensemble/building_ensembles.R')
 source('utils/defining_scoring_functions.R')
+source('simulation/simulating_ensembles.R')
 source('utils/functions_for_trisize.R')
 ```
 
 # Claims Simulation
 
 ```{r Simulation}
-simulate_claims <- F
+simulate_claims <- T
 
 if (simulate_claims) {source('simulation/simulate_claims.R')}
 ```
@@ -295,6 +296,7 @@ legend('topright',
 
 
 # CRPS Boxplots
+print("Warnings: the following plots are only available for Triangle size 40 (i.e., the main results in the paper)")
 mean_score_over_sim <- lapply(ensemble_CRPS, FUN = function(x) unlist(lapply(x, FUN = function(y) mean(y))))
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPSBoxPlot.pdf"))
@@ -360,6 +362,8 @@ legend('topleft',
 # EW ensemble is index 20
 # BMV ensemble is index 21
 
+## Note: here we calculate both DM test statistics and adjusted DM test statistics; however, the readers are recommended using only the DM test statistics to assess model performance, as the adjusted DM test is specifically designed to account for temporal dependence in the time-series forecasting applications, which might not be applicable in the loss reserving case 
+
 SLP_ind <- 1
 
 DM_LS_SLPvsEW <- calc_DM_test_models(ensemble_logS, SLP_ind, EW_ind)
@@ -398,24 +402,17 @@ print("Log Score DM test: SLP vs EW")
 mean(DM_LS_SLPvsEW > qnorm(0.975))
 print("Log Score DM test: SLP vs BMV")
 mean(DM_LS_SLPvsBMV > qnorm(0.975))
-print("Log Score ADM test: SLP vs EW")
-mean(ADM_LS_SLPvsEW > qnorm(0.975))
-print("Log Score ADM test: SLP vs BMV")
-mean(ADM_LS_SLPvsBMV > qnorm(0.975))
-
 print("Log Score DM test: ADLP vs SLP")
 mean(DM_LS_ADLPvsSLP > qnorm(0.975))
-print("Log Score ADM test: ADLP vs SLP")
-mean(ADM_LS_ADLPvsSLP > qnorm(0.975))
 
 ## Analysing CRPS test statistics: 
+print("CRPS DM test: ADLP vs EW")
 mean(-DM_CRPS_ADLPvsEW > qnorm(0.975))
+print("CRPS DM test: ADLP vs BMV")
 mean(-DM_CRPS_ADLPvsBMV > qnorm(0.975))
-mean(-ADM_CRPS_ADLPvsEW > qnorm(0.975))
-mean(-ADM_CRPS_ADLPvsBMV > qnorm(0.975))
-
+print("CRPS DM test: ADLP vs SLP")
 mean(-DM_CRPS_ADLPvsSLP > qnorm(0.975))
-mean(-ADM_CRPS_ADLPvsSLP > qnorm(0.975))
+
 ```
 
 
@@ -425,18 +422,16 @@ mean(-ADM_CRPS_ADLPvsSLP > qnorm(0.975))
 
 TestStats_BMV_EW <- data.frame(
     DM_EW=DM_LS_SLPvsEW,
-    DM_BMV=DM_LS_SLPvsBMV,
-    AdjDM_EW=ADM_LS_SLPvsEW,
-    AdjDM_BMV=ADM_LS_SLPvsBMV
+    DM_BMV=DM_LS_SLPvsBMV
 )
 
 ggplot(data=stack(as.data.frame(TestStats_BMV_EW)),aes(x=ind,y=values)) +
     geom_boxplot() +
-    labs(x="Hypothesis tests",y="Log Score") + 
-    ggtitle("Distribution of DM and Adjusted DM Statistics (SLP v.s EW & BMV)") + 
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) + 
-    scale_x_discrete(labels=c('SLP v.s EW(DM)','SLP v.s EW(BMV)', 'SLP v.s EW(Adj.DM)','SLP v.s EW(Adj.BMV)')) + 
-    geom_hline(yintercept=0,linetype="dashed", color = "blue", linewidth=1)
+    labs(x="Hypothesis tests",y="Test statistics") + 
+    ggtitle("Distribution of DM Statistics (SLP v.s EW & BMV)") + 
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) + 
+    scale_x_discrete(labels=c('SLP v.s EW(DM)', 'SLP v.s BMV(DM)')) + 
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
 
 #dev.off()
 
@@ -444,39 +439,74 @@ ggplot(data=stack(as.data.frame(TestStats_BMV_EW)),aes(x=ind,y=values)) +
 
 TestStats_ADLP_BMV_EW <- data.frame(
     DM_EW=DM_LS_ADLPvsEW,
-    DM_BMV=DM_LS_ADLPvsBMV,
-    AdjDM_EW=ADM_LS_ADLPvsEW,
-    AdjDM_BMV=ADM_LS_ADLPvsBMV
+    DM_BMV=DM_LS_ADLPvsBMV
 )
 
 ggplot(data=stack(as.data.frame(TestStats_ADLP_BMV_EW )),aes(x=ind,y=values)) + 
     geom_boxplot() +
-    labs(x="Hypothesis tests",y="Log Score") +
-    ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s EW & BMV)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s EW(BMV)', 'ADLP v.s EW(Adj.DM)','ADLP v.s EW(Adj.BMV)')) +
-    geom_hline(yintercept=0,linetype="dashed", color = "blue", linewidth=1)
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s EW & BMV)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s BMV(DM)')) +
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
 
 #dev.off()
 
 TestStats_ADLP_SLP <- data.frame(
-    DM_EW=DM_LS_ADLPvsSLP,
-    AdjDM_BMV=ADM_LS_ADLPvsSLP
+    DM_EW=DM_LS_ADLPvsSLP
 )
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsSLPvsADLP.pdf"))
 
 ggplot(data=stack(as.data.frame(TestStats_ADLP_SLP )),aes(x=ind,y=values)) +
     geom_boxplot() +
-    labs(x="Hypothesis tests",y="Log Score") +
-    ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s SLP)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('ADLP v.s SLP(DM)', 'ADLP v.s SLP(Adj.DM)')) +
-    geom_hline(yintercept=0,linetype="dashed", color = "blue", linewidth=1)
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s SLP)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('ADLP v.s SLP(DM)')) +
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
 
 #dev.off()
 
 ```
+
+
+```{r}
+### Calculate the p-value of the test (Log Score):
+p_DM_LS_SLPvsEW <- ifelse((1-pnorm(DM_LS_SLPvsEW, 0, 1))<=0.5,2*(1-pnorm(DM_LS_SLPvsEW, 0, 1)), 2*pnorm(DM_LS_SLPvsEW, 0, 1))
+
+p_DM_LS_SLPvsBMV <- ifelse(1-pnorm(DM_LS_SLPvsBMV, 0, 1)<=0.5, 2*(1-pnorm(DM_LS_SLPvsBMV, 0, 1)), 2*(pnorm(DM_LS_SLPvsBMV, 0, 1)))
+
+p_DM_LS_ADLPvsEW <- ifelse(1-pnorm(DM_LS_ADLPvsEW, 0, 1)<=0.5, 2*(1-pnorm(DM_LS_ADLPvsEW, 0, 1)), 2*pnorm(DM_LS_ADLPvsEW, 0, 1))
+
+p_DM_LS_ADLPvsBMV <- ifelse(1-pnorm(DM_LS_ADLPvsBMV, 0, 1)<=0.5, 2*(1-pnorm(DM_LS_ADLPvsBMV, 0, 1)), 2*pnorm(DM_LS_ADLPvsBMV, 0, 1))
+
+p_DM_LS_ADLPvsSLP <- ifelse(1-pnorm(DM_LS_ADLPvsSLP, 0, 1)<=0.5,2*(1-pnorm(DM_LS_ADLPvsSLP, 0, 1)),2*pnorm(DM_LS_ADLPvsSLP, 0, 1))
+
+## Plot the box-plot :
+TestStats_p_val_SLP <- data.frame(p_DM_EW=p_DM_LS_SLPvsEW,
+                               p_DM_BMV=p_DM_LS_SLPvsBMV)
+
+TestStats_p_val_ADLP <- data.frame(p_DM_EW = p_DM_LS_ADLPvsEW,
+                               p_DM_BMV = p_DM_LS_ADLPvsBMV,
+                               p_DM_SLP = p_DM_LS_ADLPvsSLP)
+
+#pdf(paste0("simulation/triangle_", tri.size, "-data/TestStats_p_val_SLP.pdf"))
+ggplot(data=stack(as.data.frame(TestStats_p_val_SLP)),aes(x=ind,y=values))+geom_boxplot()+labs(x="Hypothesis tests",y="p-values")+ggtitle("Distribution of Log-score p-values (SLP v.s EW & BMV)")+geom_hline(yintercept=0.05,linetype="dashed", color = "red", size=1)+scale_x_discrete(labels=c('SLP v.s EW(DM)','SLP v.s BMV(DM)'))+geom_hline(yintercept=0.1,linetype="dashed", color = "blue", size=1)
+#dev.off()
+
+
+#pdf(paste0("simulation/triangle_", tri.size, "-data/TestStats_p_val_ADLP.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_p_val_ADLP)),aes(x=ind,y=values))+geom_boxplot()+labs(x="Hypothesis tests",y="p-values")+ggtitle("Distribution of Log-score p-values (ADLP v.s EW, BMV & SLP)")+geom_hline(yintercept=0.05,linetype="dashed", color = "red", size=1)+scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s BMV(DM)', 'ADLP v.s SLP(DM)'))+geom_hline(yintercept=0.1,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
+
+
+
+
+```
+
 
 
 ```{r Graphical Results: CRPS}}
@@ -486,16 +516,15 @@ ggplot(data=stack(as.data.frame(TestStats_ADLP_SLP )),aes(x=ind,y=values)) +
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsBMV_CRPS.pdf"))
 
 TestStats_OptimADLP_BMV <- data.frame(
-    DM_BMV=-DM_CRPS_ADLPvsBMV,
-    AdjDM_BMV=-ADM_CRPS_ADLPvsBMV
+    DM_BMV=-DM_CRPS_ADLPvsBMV
 )
 
 ggplot(data=stack(as.data.frame(TestStats_OptimADLP_BMV)),aes(x=ind,y=values)) + 
     geom_boxplot() +
-    labs(x="Accident Periods",y="CRPS") +
-    ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s BMV)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s BMV(DM)', 'Optimal ADLP v.s BMV(Adj.ADM)'))
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s BMV)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('Optimal ADLP v.s BMV(DM)'))
 
 #dev.off()
 
@@ -503,52 +532,83 @@ ggplot(data=stack(as.data.frame(TestStats_OptimADLP_BMV)),aes(x=ind,y=values)) +
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsEW_CRPS.pdf"))
 
 TestStats_OptimADLP_EW <- data.frame(
-    DM_EW=-DM_CRPS_ADLPvsEW,
-    AdjDM_EW=-ADM_CRPS_ADLPvsEW
+    DM_EW=-DM_CRPS_ADLPvsEW
 )
 
 ggplot(data=stack(as.data.frame(TestStats_OptimADLP_EW)),aes(x=ind,y=values)) +
     geom_boxplot() +
-    labs(x="Accident Periods",y="CRPS") +
-    ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s EW)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s EW(DM)', 'Optimal ADLP v.s EW(Adj.ADM)'))
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s EW)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('Optimal ADLP v.s EW(DM)'))
 
 #dev.off()
 
 TestStats_OptimADLP_SLP <- data.frame(
-    DM_SLP=-DM_CRPS_ADLPvsSLP,
-    AdjDM_SLP=-ADM_CRPS_ADLPvsSLP
+    DM_SLP=-DM_CRPS_ADLPvsSLP
 )
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsSLP_CRPS.pdf"))
 
 ggplot(data=stack(as.data.frame(TestStats_OptimADLP_SLP)),aes(x=ind,y=values)) +
     geom_boxplot() +
-    labs(x="Accident Periods",y="CRPS") +
-    ggtitle("Distribution of DM and Adjusted DM Statistics (Optimal ADLP v.s SLP)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s SLP(DM)', 'Optimal ADLP v.s SLP(Adj.ADM)'))
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s SLP)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('Optimal ADLP v.s SLP(DM)'))
 
 #dev.off()
 
 
 TestStats_OptimADLP_ADLP <- data.frame(
-    DM_ADLP=-DM_CRPS_ADLPvsADLP,
-    AdjDM_ADLP = -ADM_CRPS_ADLPvsADLP
+    DM_ADLP=-DM_CRPS_ADLPvsADLP
 )
 
 #pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsADLP_CRPS.pdf"))
 
 ggplot(data=stack(as.data.frame(TestStats_OptimADLP_ADLP)),aes(x=ind,y=values)) +
     geom_boxplot() +
-    labs(x="Accident Periods",y="CRPS") +
-    ggtitle("Distribution of DM and Adjusted DM Statistics (ADLP 12 v.s ADLP 13)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('ADLP 12 v.s ADLP 13(DM)', 'ADLP 12 v.s ADLP 13(Adj.ADM)'))
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of CRPS DM Statistics (ADLP 12 v.s ADLP 13)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('ADLP 12 v.s ADLP 13(DM)'))
 
 #dev.off()
 
+
+
+
+
+```
+
+
+```{r}
+### Calculate the p-value of the test (CRPS):
+
+p_DM_CRPS_ADLPvsEW <- ifelse(1-pnorm(DM_CRPS_ADLPvsEW, 0, 1)<=0.5, 2*(1-pnorm(DM_CRPS_ADLPvsEW, 0, 1)), 2*pnorm(DM_CRPS_ADLPvsEW, 0, 1))
+
+p_DM_CRPS_ADLPvsBMV <- ifelse(1-pnorm(DM_CRPS_ADLPvsBMV, 0, 1)<=0.5, 2*(1-pnorm(DM_CRPS_ADLPvsBMV, 0, 1)), 2*pnorm(DM_CRPS_ADLPvsBMV, 0, 1))
+
+p_DM_CRPS_ADLPvsSLP <- ifelse(1-pnorm(DM_CRPS_ADLPvsSLP, 0, 1)<=0.5,2*(1-pnorm(DM_CRPS_ADLPvsSLP, 0, 1)),2*pnorm(DM_CRPS_ADLPvsSLP, 0, 1))
+
+p_DM_CRPS_ADLPvsADLP <- ifelse(1-pnorm(DM_CRPS_ADLPvsADLP, 0, 1)<=0.5,2*(1-pnorm(DM_CRPS_ADLPvsADLP, 0, 1)),2*pnorm(DM_CRPS_ADLPvsADLP, 0, 1))
+
+
+
+## Plot the box-plot :
+
+TestStats_p_val_ADLP_CRPS <- data.frame(p_DM_EW = p_DM_CRPS_ADLPvsEW,
+                               p_DM_BMV = p_DM_CRPS_ADLPvsBMV,
+                               p_DM_SLP = p_DM_CRPS_ADLPvsSLP,
+                               p_DM_ADLP = p_DM_CRPS_ADLPvsADLP)
+
+
+
+#pdf(paste0("simulation/triangle_", tri.size, "-data/TestStats_p_val_ADLP.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_p_val_ADLP_CRPS)),aes(x=ind,y=values))+geom_boxplot()+labs(x="Hypothesis tests",y="p-values")+ggtitle("Distribution of CPRS p-values (ADLP v.s EW, BMV and SLP)")+geom_hline(yintercept=0.05,linetype="dashed", color = "red", size=1)+scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s BMV(DM)', 'ADLP v.s SLP(DM)', 'ADLP 12 v.s ADLP 13'))+geom_hline(yintercept=0.1,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
 
 
 
@@ -651,10 +711,23 @@ relative_diff_75Bias <- (quantile_reserve_estimate - quantile_reserve)/quantile_
 reserve_bias_75Quantile <- apply(abs(relative_diff_75Bias), MARGIN = 2, median)
 
 
-boxplot(relative_diff_centralBias)
-boxplot(relative_diff_75Bias)
+
 
 ```
+
+```{r}
+AME_75quantile <- apply((quantile_reserve_estimate - quantile_reserve)/quantile_reserve_estimate, MARGIN = 2, FUN = function(x) abs(median(x)))
+plot(x=corres_splitpoints_SLPincluded, y = AME_75quantile[-c(EW_ind, BMV_ind)], xlab = "Accident Periods", ylab = "Absolute Median error", ylim = c(0, mean_reserve_bias[EW_ind]), main = "Absolute median error (75 quantile)")
+abline(h = mean_reserve_bias[EW_ind], col = 'red')
+abline(h = mean_reserve_bias[BMV_ind], col = 'green')
+
+#AME_central <- apply(relative_diff_centralBias, MARGIN = 2, FUN = function(x) abs(median(x)))
+
+
+
+```
+
+
 
 ## Graphical Results of Aggregate Reserve Bias
 
@@ -665,7 +738,9 @@ boxplot(relative_diff_75Bias)
 corres_splitpoints_SLPincluded<-c(0, split_points)
 
 # Central Reserve
-# pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CentralRelativeReserveBias.pdf"))
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CentralRelativeReserveBias.pdf"))
+
+
 
 mean_reserve_bias <- abs(central_reserve_bias)
 
@@ -673,7 +748,7 @@ par(mar = c(3.8, 3.8, 3.8, 2))
 plot(x=corres_splitpoints_SLPincluded, y=mean_reserve_bias[-c(EW_ind, BMV_ind)],
      type="p",xlab="Accident Periods",ylab="Mean Aggregate Reserve Bias",
      main="Mean Absolute Central Reserve Bias v.s. Different split points",
-     ylim = c(min(mean_reserve_bias), max(mean_reserve_bias)))
+     ylim = c(0, max(mean_reserve_bias)))
 points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=mean_reserve_bias[optim_ADLP_index],
        type="p",col="black",pch=16,cex=1.6)
 
@@ -682,30 +757,64 @@ legend('bottomright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,1
 abline(h = mean_reserve_bias[EW_ind], col = 'red')
 abline(h = mean_reserve_bias[BMV_ind], col = 'green')
   
-# dev.off()
+#dev.off()
 
 # 75th Quantile Reserve
 
 par(mar = c(3.8, 3.8, 3.8, 2))
 
-# pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_RelativeReserveBiasat75Quantile.pdf"))
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_RelativeReserveBiasat75Quantile.pdf"))
 
 
 plot(x=corres_splitpoints_SLPincluded, y=reserve_bias_75Quantile[-c(EW_ind, BMV_ind)],
      type="p",xlab="Accident Periods",ylab="Absolute aggregate Reserve Bias at 75th Quantile",
      main="Absolute aggregate Reserve Bias at 75th Quantile v.s. Different split points",
-     ylim = c(min(reserve_bias_75Quantile), max(reserve_bias_75Quantile)))
+     ylim = c(0, max(reserve_bias_75Quantile)))
 points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=reserve_bias_75Quantile[optim_ADLP_index ],
        type="p",col="black",pch=16,cex=1.6)
 
-points(x=0,y=reserve_bias_75Quantile [1],type="p",col="grey",pch=16,cex=ifelse(which.min(reserve_bias_75Quantile [-c(EW_ind, BMV_ind)]) == 1, 0.8, 1.6))
+points(x=0,y=reserve_bias_75Quantile[1],type="p",col="grey",pch=16,cex=ifelse(which.min(reserve_bias_75Quantile [-c(EW_ind, BMV_ind)]) == 1, 0.8, 1.6))
 legend('bottomright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
 abline(h = reserve_bias_75Quantile [EW_ind], col = 'red')
 abline(h = reserve_bias_75Quantile [BMV_ind], col = 'green')
 
-# dev.off()
+#dev.off()
 
 ```
+
+```{r}
+# Define the names of all the strategies used in the paper: 
+all_ensembles_names <- c()
+for(i in 1:19){
+    all_ensembles_names[i] <- paste("ADLP", i-1)
+}
+all_ensembles_names[20] <- "EW"
+all_ensembles_names[21] <- "BMV"
+
+
+## Plot the box plot of the reserve bias: 
+
+### Plot the box-plot of central relative reserve bias: 
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_BoxplotRelativeCentralReserveBias.pdf"))
+
+
+ggplot(data=stack(as.data.frame(relative_diff_centralBias[, c("ADLP_par0", "ADLP_par12", "EW", "BMV")])),aes(x=ind,y=values))+geom_boxplot()+labs(x="Models",y="Relative reserve bias")+ggtitle("Distribution of central relative reserve bias")+ylim(-0.4, 0.8)+scale_x_discrete(labels = c("SLP", "ADLP 12", "EW", "BMV"), guide = guide_axis(angle = 45))
+
+#dev.off()
+
+### Plot the box-plot of 75th quantile relative reserve bias: 
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_BoxplotRelative75QuantileReserveBias.pdf"))
+
+
+ggplot(data=stack(as.data.frame(relative_diff_75Bias[, c("ADLP_par0", "ADLP_par12", "EW", "BMV")])),aes(x=ind,y=values))+geom_boxplot()+labs(x="Models",y="Relative reserve bias (75th quantile)")+ggtitle("Distribution of relative reserve bias(75th quantile)")+ylim(-0.25, 0.5)+scale_x_discrete(labels = c("SLP", "ADLP 12", "EW", "BMV"), guide = guide_axis(angle = 45))
+
+#dev.off()
+
+```
+
+
 
 # Investigation over Estimated Model Weights
 
@@ -735,12 +844,14 @@ mean_weights_subset2 <- apply(model_weights_simul_mat_Subset2, MARGIN=2,FUN=mean
 
 ```{r Graphical Results: Estimated model weights over subsets}
 ##### Plotting model Weights for Subset 1: 
+
+### Need to comment out the ZALN and ZAGA lines if one selects the triangle size to be 20: 
 express <- c(
     expression(GLM[ccODP]),
     expression(GLM[ccGA]),
     expression(GLM[ccLN]),
-    # expression(GLM[ZAGA]),
-    # expression(GLM[ZALN]),
+    expression(GLM[ZAGA]),
+    expression(GLM[ZALN]),
     expression(GLM[hcODP]),
     expression(GLM[hcGA]),
     expression(GLM[hcLN]),
