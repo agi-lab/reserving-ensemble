@@ -1,0 +1,956 @@
+---
+title: "Reserving Ensemble"
+output: html_notebook
+---
+
+
+
+```{r Setup, results='hide', echo=FALSE}
+# NOTE remember to 'restart R and clear all outputs' if changing triangle size
+# Number of triangles/simulations
+n.sims <- 100
+tri.size <-40
+## Note: the current code only supports triangle size of 20 x 20 and 40 x 40 
+
+source('utils/load_required_packages.R')
+source('utils/defining_helper_functions.R')
+source('ensemble/defining_component_functions.R')
+source('ensemble/fitting_component_models.R')
+source('ensemble/building_ensembles.R')
+source('utils/defining_scoring_functions.R')
+source('simulation/simulating_ensembles.R')
+source('utils/functions_for_trisize.R')
+```
+
+# Claims Simulation
+
+```{r Simulation}
+simulate_claims <- T
+
+if (simulate_claims) {source('simulation/simulate_claims.R')}
+```
+
+# Fitting Models
+## Fitting Component Models
+
+```{r Fitting Component Models, results='hide'}
+# Meta data format:
+#   List of simulations. each simulation has:
+#       Rows: number of data pints in prediction
+#       Cols: number of component model + 2 (origin and dev cols)
+
+# In-sample 
+fitted_components_valid <- list()
+meta_mu_valid <- list()
+meta_dens_valid <- list()
+meta_CDF_valid <- list()
+
+# Out-sample
+fitted_components_outsample <- list()
+meta_mu_outsample <- list()
+meta_dens_outsample <- list()
+meta_CDF_outsample <- list()
+
+suppressWarnings({
+    
+for (sim in 1:n.sims) {
+    # Train on train, test on valid-test
+    past_data <- read.csv(sprintf('simulation/triangle_%s-data/sim%s-past-data.csv', tri.size, sim))
+    past_data_split <- claims_df_train_val_test(past_data)
+    results_past <- fit_all_component_models(past_data_split$train, past_data_split$valid) 
+    
+    # Train on train+valid, test on test
+    full_data <- read.csv(sprintf('simulation/triangle_%s-data/sim%s-full-data.csv', tri.size, sim))
+    full_data_split <- claims_df_in_out(full_data)
+    results_full <- fit_all_component_models(rbind(full_data_split$train, full_data_split$valid), full_data_split$test)
+    
+    fitted_components_valid[[sim]] <- results_past$component_models
+    meta_mu_valid[[sim]] <- results_past$meta_mu
+    meta_dens_valid[[sim]] <- results_past$meta_dens
+    meta_CDF_valid[[sim]] <- results_past$meta_CDF
+    fitted_components_outsample[[sim]] <- results_full$component_models
+    meta_mu_outsample[[sim]] <- results_full$meta_mu
+    meta_dens_outsample[[sim]] <- results_full$meta_dens
+    meta_CDF_outsample[[sim]] <- results_full$meta_CDF
+    
+    if (floor(sim %% (n.sims/4)) == 0) {
+        print(sprintf('... Completed %s of %s simulations...', sim, n.sims))
+    }
+}
+    
+})
+```
+
+## Fitting Benchmark Models
+
+```{r Fitting Benchmark Models}
+best_model_val_index <- c()
+if(tri.size == 40){
+    n.models <- 18
+} else{
+    n.models <- 16
+}
+
+# Equally Weighted Ensemble
+w_init_1_3<-rep(1/n.models,n.models)
+
+for (sim in 1:n.sims) {
+    #Calculate Best Performance Model in the validation set
+    LogS_valid_IndEn2 <- log(meta_dens_valid[[sim]][, -c(1, 2)] + 1e-6)
+    best_model_val_index[sim] <- which.max(apply(LogS_valid_IndEn2, MARGIN=2, FUN=mean))
+}
+
+names(best_model_val_index) <- names(fitted_components_valid[[1]])[best_model_val_index]
+```
+
+## Fitting Ensemble Models
+
+```{r Fitting Ensemble Models}
+# all_ensemble format
+#     List of ensemble models (each fit on its own partition). Each model has:
+#         - Out-of-sample density
+#             - number of simulations
+#                 - value for each partition
+#         - Out-of-sample CDF
+#             - number of simulations
+#                 - value for each partition
+#         - Final model weights for each component
+#             - number of simulations
+#                 - value for each partition
+#         - List of partitions
+#             - Each item in the list is the indices used in partition
+#         - optimMM object from the MM optimisation
+#     
+
+all_ensembles <- fit_all_partition_ensembles(
+    meta_dens_valid, 
+    meta_dens_outsample
+)
+
+EW <- list(
+    model_weights_simul_sims = weights_for_EW_all_sims(n.sims, w_init_1_3),
+    partition_func = par0,
+    optimMM = NULL
+)
+
+BMV <- list(
+    model_weights_simul_sims = weights_for_BMV_all_sims(n.models, best_model_val_index),
+    partition_func = par0,
+    optimMM = NULL
+)
+
+all_ensembles$EW <- EW
+all_ensembles$BMV <- BMV
+
+EW_ind <- length(all_ensembles) - 1
+BMV_ind <- length(all_ensembles)
+
+n.ensembles <- length(all_ensembles)
+```
+
+# Goodness of Fit Measures
+
+```{r Calculate logS for each new observation y_k}
+# Level of Data within list
+# - Ensemble
+# - Simulation
+# - Data
+
+component_logS <- lapply(
+    meta_dens_outsample, FUN = function(x) log(x[, -c(1, 2)] + 1e-6)
+)
+
+ensemble_dens <- calc_dens_ensemble(meta_dens_outsample, all_ensembles)
+ensemble_logS <- lapply(
+    ensemble_dens, FUN = function(x) lapply(x, FUN = function(y) log(y+1e-6))
+)
+names(ensemble_logS) <- names(all_ensembles)
+
+```
+
+```{r Calculate CRPS for each new observation y_k}
+suppressWarnings({
+
+ensemble_CRPS <- calc_crps_ensemble(
+    n.sims, 
+    fitted_components_outsample, 
+    all_ensembles
+)
+
+})
+
+CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) mean(unlist(x))))[1:(n.ensembles-2)]
+#CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
+```
+
+
+## Graphical Results of GoF Measures
+
+```{r Exploratory Data Analysis - Checking NA densities}
+## NA exploration:
+
+na.SLP <- c()
+for(i in 1:n.sims){
+   na.SLP[i] <- sum(is.na(ensemble_logS[[1]][[i]]))
+}
+
+
+apply(meta_dens_outsample[[which.max(na.SLP)]], FUN = function(x) sum(is.na(x)==TRUE), MARGIN = 2)
+
+```
+
+
+```{r Exploratory Data Analysis - Log Score Plots}
+
+
+# Log Score Boxplots
+
+mean_score_over_sim <- lapply(ensemble_logS, FUN = function(x) unlist(lapply(x, FUN = function(y) mean(y))))
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_LogScoreBoxPlot.pdf"))
+ggplot(data=stack(data.frame(mean_score_over_sim)[, c('ADLP_par0', 'BMV', 'EW')]), aes(x = ind, y = values)) + 
+    geom_boxplot()+labs(x="Model",y="Log Score") +
+    ggtitle("Average Log Score over 100 Simulations") +
+    scale_x_discrete(labels=c('SLP','BMV', 'EW'))
+#dev.off()
+
+# Log Score with Different Split Points
+corres_splitpoints_SLPincluded<-c(0, split_points)
+LS_comparision_ADLP <- unlist(lapply(ensemble_logS, FUN = function(x) mean(unlist(x), na.rm = TRUE)))[1:(n.ensembles-2)]
+#LS_comparision_ADLP <- unlist(lapply(ensemble_logS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
+
+optim_ADLP_index <- which.max(LS_comparision_ADLP)
+optim_ADLP_splitPoint <- corres_splitpoints_SLPincluded[optim_ADLP_index]
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_MeanLogScorebySplitPoints.pdf"))
+#par(mar = c(3.8, 3.8, 3.8, 2))
+plot(x=corres_splitpoints_SLPincluded, y=LS_comparision_ADLP,
+     type="p",xlab="Accident Periods",ylab="Mean Log Score",
+     main="Mean Log Score v.s. Different split points")
+points(x=corres_splitpoints_SLPincluded[which.max(LS_comparision_ADLP)], y=max(LS_comparision_ADLP),
+       type="p",col="black",pch=16,cex=1.6)
+points(x=0,y=LS_comparision_ADLP[1],type="p",col="grey",pch=16,cex=ifelse(which.max(LS_comparision_ADLP) == 1, 0.8, 1.6))
+legend('topleft' ,legend=c("SLP","Optimal ADLP"),col=c("grey","black"),pch=c(16,16),cex=1)
+#dev.off()
+
+# Log Score by Accident Periods
+out_sample_ap <- meta_dens_outsample[[1]]$origin
+all_ap <- sort(unique(out_sample_ap))
+LS_AP_components <- average_by_index_sim(out_sample_ap, component_logS)
+LS_AP_ensembles <- lapply(ensemble_logS, FUN = function(x) average_by_index(out_sample_ap, x))
+
+# Log Score by Accident periods: Component models
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_LogScorebyAccidentPeriodsSLP.pdf"))
+#par(mar = c(3.8, 3.8, 3.8, 0))
+model_names <- colnames(meta_dens_outsample[[1]])[3:(n.models + 2)]
+plot(x=all_ap,y=LS_AP_components[[1]],
+     col="grey",ylim=c(-8,0),type="l",main="Log-Score by Accident Periods ",ylab="Mean Log Score",xlab="Accident Periods")
+for (i in 2:length(LS_AP_components)){
+  points(x=all_ap,y=LS_AP_components[[i]],col="grey",type="l")
+}
+
+points(x=all_ap, y=LS_AP_components[[which(model_names == "dens_PPCF")]],col="orange",type="l",lwd=1)
+# points(x=all_ap, y=LS_AP_components[[which(model_names == "dens_ZAGA")]],col="brown",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[BMV_ind]],col="green",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[1]],col="yellow",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[EW_ind]],col="red",type="l",lwd=1)
+
+legend('topright',
+       legend=c("Component Models",
+                "PPCF",
+                # "ZAGA",
+                "Best Models in Validation Set",
+                "SLP", "Equally Weighted Ensemble"),
+       col=c("grey", "orange","brown","green","yellow","red"),lty=1,cex=0.6)
+#dev.off()
+
+# Log Score by Accident periods: ADLP ensembles
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_LogScorebyAccidentPeriodsADLP.pdf"))
+#par(mar = c(3.8, 3.8, 3.8, 0))
+plot(x=all_ap,y=LS_AP_components[[1]],
+     col="grey",ylim=c(-8,0),type="l",main="Log-Score by Accident Periods ",ylab="Mean Log Score",xlab="Accident Periods")
+for (i in 2:length(LS_AP_components)){
+  points(x=all_ap,y=LS_AP_components[[i]],col="grey",type="l")
+}
+#points(x=all_ap,y=LS_AP_components[[12]],col="brown",type="l")
+
+points(x=all_ap,y=LS_AP_ensembles[[1]],col="yellow",type="l",lwd=2)
+points(x=all_ap,y=LS_AP_ensembles[[2]],col="#2417DA",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[optim_ADLP_index]],col="#6D4691",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[length(split_points) + 1]],col="#FFA500",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[EW_ind]],col="red",type="l",lwd=1)
+points(x=all_ap,y=LS_AP_ensembles[[BMV_ind]],col="green",type="l",lwd=1)
+legend('topright',
+       legend=c("Component Models",
+                "Best Models in Validation Set",
+                "SLP","ADLP 1(AP 2-3)",paste0("ADLP", " ", optim_ADLP_index-1, "(AP2-", optim_ADLP_splitPoint,")"), "ADLP 18(AP2-33)","Equally Weighted Ensemble"),
+       col=c("grey","green","yellow","#2417DA","#6D4691","#FFA500","red"),lty=1,cex=0.6)
+#dev.off()
+```
+
+
+
+
+```{r Exploratory Data Analysis - CRPS Plots}
+
+
+# CRPS Boxplots
+print("Warnings: the following plots are only available for Triangle size 40 (i.e., the main results in the paper)")
+mean_score_over_sim <- lapply(ensemble_CRPS, FUN = function(x) unlist(lapply(x, FUN = function(y) mean(y))))
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPSBoxPlot.pdf"))
+
+ggplot(data=stack(data.frame(mean_score_over_sim)[, c('ADLP_par0', 'ADLP_par12','ADLP_par13', 'BMV', 'EW')]), aes(x = ind, y = values)) + 
+    ylim(10, 25) +
+    geom_boxplot()+labs(x="Model",y="CRPS") +
+    ggtitle("Average CRPS over 100 Simulations") +
+    scale_x_discrete(labels=c('SLP','ADLP 12','ADLP 13','BMV', 'EW'))
+
+#dev.off()
+
+# CRPS with Different Split Points
+corres_splitpoints_SLPincluded<-c(0, split_points)
+
+#par(mar = c(3.8, 3.8, 3.8, 2))
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPSbySplitpoints.pdf"))
+
+plot(x=corres_splitpoints_SLPincluded, y=CRPS_comparision_ADLP,
+     type="p",xlab="Accident Periods",ylab="Mean CRPS",
+     main="Mean CRPS v.s. Different split points")
+points(x=corres_splitpoints_SLPincluded[which.min(CRPS_comparision_ADLP)], y=min(CRPS_comparision_ADLP),
+       type="p",col="black",pch=16,cex=1.6)
+
+points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=CRPS_comparision_ADLP[optim_ADLP_index],
+       type="p",col="brown",pch=16,cex=1.6)
+
+points(x=0,y=CRPS_comparision_ADLP[1],type="p",col="grey",pch=16,cex=ifelse(which.min(CRPS_comparision_ADLP) == 1, 0.8, 1.6))
+legend('bottomleft' ,legend=c("SLP","ADLP 13", "ADLP 12"),col=c("grey","black", "brown"),pch=c(16,16),cex=1)
+
+#dev.off()
+
+# CRPS by Accident Periods
+ensemble_all_ap <- lapply(ensemble_CRPS, function(y) as.numeric(sapply(strsplit(names(y[[1]]), "-"), function(x) x[[1]])))
+all_ap <- sort(unique(ensemble_all_ap[[1]]))
+CRPS_AP_ensembles <- mapply(FUN = function(crps, ap_ind) average_by_index(ap_ind, crps), ensemble_CRPS, ensemble_all_ap)
+
+#par(mar = c(3.8, 3.8, 3.8, 0))
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPS_byAccidentPeriods.pdf"))
+
+plot(x=all_ap,y=CRPS_AP_ensembles[, 1], ylim = c(2, 30),
+     col="yellow",type="l",main="CRPS by Accident Periods ",ylab="Mean CRPS",xlab="Accident Periods")
+points(x=all_ap,y=CRPS_AP_ensembles[, 2],col="#2417DA",type="l",lwd=1)
+points(x=all_ap,y=CRPS_AP_ensembles[, optim_ADLP_index],col="#6D4691",type="l",lwd=1)
+points(x=all_ap,y=CRPS_AP_ensembles[, which.min(CRPS_comparision_ADLP)],col="#FFA500",type="l",lwd=1)
+points(x=all_ap,y=CRPS_AP_ensembles[, EW_ind],col="red",type="l",lwd=1)
+points(x=all_ap,y=CRPS_AP_ensembles[, BMV_ind],col="green",type="l",lwd=1)
+legend('topleft',
+       legend=c("SLP",
+                "Best Models in Validation Set",
+                "ADLP 1(AP 2-3)","ADLP 12(AP2-18)","ADLP 13(AP2-19)",
+                "Equally Weighted Ensemble"),
+       col=c("yellow","green","#2417DA","#6D4691","#FFA500","red"),lty=1,cex=0.6)
+#dev.off()
+```
+
+## Statistical Tests of GoF Measures
+
+
+```{r Calc DM and Adj. DM Test Scores}
+# names(all_ensembles)
+# EW ensemble is index 20
+# BMV ensemble is index 21
+
+## Note: here we calculate both DM test statistics and adjusted DM test statistics; however, the readers are recommended using only the DM test statistics to assess model performance, as the adjusted DM test is specifically designed to account for temporal dependence in the time-series forecasting applications, which might not be applicable in the loss reserving case 
+
+SLP_ind <- 1
+
+DM_LS_SLPvsEW <- calc_DM_test_models(ensemble_logS, SLP_ind, EW_ind)
+DM_LS_SLPvsBMV <- calc_DM_test_models(ensemble_logS, SLP_ind, BMV_ind)
+ADM_LS_SLPvsEW <- calc_adj_DM_test_models(ensemble_logS, SLP_ind, EW_ind)
+ADM_LS_SLPvsBMV <- calc_adj_DM_test_models(ensemble_logS, SLP_ind, BMV_ind)
+
+DM_LS_ADLPvsEW <- calc_DM_test_models(ensemble_logS, optim_ADLP_index, EW_ind)
+DM_LS_ADLPvsBMV <- calc_DM_test_models(ensemble_logS, optim_ADLP_index, BMV_ind)
+ADM_LS_ADLPvsEW <- calc_adj_DM_test_models(ensemble_logS, optim_ADLP_index, EW_ind)
+ADM_LS_ADLPvsBMV <- calc_adj_DM_test_models(ensemble_logS, optim_ADLP_index, BMV_ind)
+
+
+DM_LS_ADLPvsSLP <- calc_DM_test_models(ensemble_logS, optim_ADLP_index, SLP_ind)
+ADM_LS_ADLPvsSLP <- calc_adj_DM_test_models(ensemble_logS, optim_ADLP_index, SLP_ind)
+
+
+
+DM_CRPS_ADLPvsEW <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, EW_ind)
+DM_CRPS_ADLPvsBMV <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, BMV_ind)
+ADM_CRPS_ADLPvsEW <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, EW_ind)
+ADM_CRPS_ADLPvsBMV <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, BMV_ind)
+
+DM_CRPS_ADLPvsSLP <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, SLP_ind)
+ADM_CRPS_ADLPvsSLP <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, SLP_ind)
+
+DM_CRPS_ADLPvsADLP <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, which.min(CRPS_comparision_ADLP))
+ADM_CRPS_ADLPvsADLP <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, which.min(CRPS_comparision_ADLP))
+
+```
+
+
+```{r Calc DM and Adj. DM Test Statistics}
+## Analysing Log Score test statistics: 
+print("Log Score DM test: SLP vs EW")
+mean(DM_LS_SLPvsEW > qnorm(0.975))
+print("Log Score DM test: SLP vs BMV")
+mean(DM_LS_SLPvsBMV > qnorm(0.975))
+print("Log Score DM test: ADLP vs SLP")
+mean(DM_LS_ADLPvsSLP > qnorm(0.975))
+
+## Analysing CRPS test statistics: 
+print("CRPS DM test: ADLP vs EW")
+mean(-DM_CRPS_ADLPvsEW > qnorm(0.975))
+print("CRPS DM test: ADLP vs BMV")
+mean(-DM_CRPS_ADLPvsBMV > qnorm(0.975))
+print("CRPS DM test: ADLP vs SLP")
+mean(-DM_CRPS_ADLPvsSLP > qnorm(0.975))
+
+```
+
+
+```{r Graphical Results: Log Scores}
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsSLPvsBMVandEW.pdf"))
+
+TestStats_BMV_EW <- data.frame(
+    DM_EW=DM_LS_SLPvsEW,
+    DM_BMV=DM_LS_SLPvsBMV
+)
+
+ggplot(data=stack(as.data.frame(TestStats_BMV_EW)),aes(x=ind,y=values)) +
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") + 
+    ggtitle("Distribution of DM Statistics (SLP v.s EW & BMV)") + 
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) + 
+    scale_x_discrete(labels=c('SLP v.s EW(DM)', 'SLP v.s BMV(DM)')) + 
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsADLPvsBMVandEW.pdf"))
+
+TestStats_ADLP_BMV_EW <- data.frame(
+    DM_EW=DM_LS_ADLPvsEW,
+    DM_BMV=DM_LS_ADLPvsBMV
+)
+
+ggplot(data=stack(as.data.frame(TestStats_ADLP_BMV_EW )),aes(x=ind,y=values)) + 
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s EW & BMV)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s BMV(DM)')) +
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
+
+TestStats_ADLP_SLP <- data.frame(
+    DM_EW=DM_LS_ADLPvsSLP
+)
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsSLPvsADLP.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_ADLP_SLP )),aes(x=ind,y=values)) +
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s SLP)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('ADLP v.s SLP(DM)')) +
+    geom_hline(yintercept=0,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
+
+```
+
+
+```{r}
+### Calculate the p-value of the test (Log Score):
+p_DM_LS_SLPvsEW <- ifelse((1-pnorm(DM_LS_SLPvsEW, 0, 1))<=0.5,2*(1-pnorm(DM_LS_SLPvsEW, 0, 1)), 2*pnorm(DM_LS_SLPvsEW, 0, 1))
+
+p_DM_LS_SLPvsBMV <- ifelse(1-pnorm(DM_LS_SLPvsBMV, 0, 1)<=0.5, 2*(1-pnorm(DM_LS_SLPvsBMV, 0, 1)), 2*(pnorm(DM_LS_SLPvsBMV, 0, 1)))
+
+p_DM_LS_ADLPvsEW <- ifelse(1-pnorm(DM_LS_ADLPvsEW, 0, 1)<=0.5, 2*(1-pnorm(DM_LS_ADLPvsEW, 0, 1)), 2*pnorm(DM_LS_ADLPvsEW, 0, 1))
+
+p_DM_LS_ADLPvsBMV <- ifelse(1-pnorm(DM_LS_ADLPvsBMV, 0, 1)<=0.5, 2*(1-pnorm(DM_LS_ADLPvsBMV, 0, 1)), 2*pnorm(DM_LS_ADLPvsBMV, 0, 1))
+
+p_DM_LS_ADLPvsSLP <- ifelse(1-pnorm(DM_LS_ADLPvsSLP, 0, 1)<=0.5,2*(1-pnorm(DM_LS_ADLPvsSLP, 0, 1)),2*pnorm(DM_LS_ADLPvsSLP, 0, 1))
+
+## Plot the box-plot :
+TestStats_p_val_SLP <- data.frame(p_DM_EW=p_DM_LS_SLPvsEW,
+                               p_DM_BMV=p_DM_LS_SLPvsBMV)
+
+TestStats_p_val_ADLP <- data.frame(p_DM_EW = p_DM_LS_ADLPvsEW,
+                               p_DM_BMV = p_DM_LS_ADLPvsBMV,
+                               p_DM_SLP = p_DM_LS_ADLPvsSLP)
+
+#pdf(paste0("simulation/triangle_", tri.size, "-data/TestStats_p_val_SLP.pdf"))
+ggplot(data=stack(as.data.frame(TestStats_p_val_SLP)),aes(x=ind,y=values))+geom_boxplot()+labs(x="Hypothesis tests",y="p-values")+ggtitle("Distribution of Log-score p-values (SLP v.s EW & BMV)")+geom_hline(yintercept=0.05,linetype="dashed", color = "red", size=1)+scale_x_discrete(labels=c('SLP v.s EW(DM)','SLP v.s BMV(DM)'))+geom_hline(yintercept=0.1,linetype="dashed", color = "blue", size=1)
+#dev.off()
+
+
+#pdf(paste0("simulation/triangle_", tri.size, "-data/TestStats_p_val_ADLP.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_p_val_ADLP)),aes(x=ind,y=values))+geom_boxplot()+labs(x="Hypothesis tests",y="p-values")+ggtitle("Distribution of Log-score p-values (ADLP v.s EW, BMV & SLP)")+geom_hline(yintercept=0.05,linetype="dashed", color = "red", size=1)+scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s BMV(DM)', 'ADLP v.s SLP(DM)'))+geom_hline(yintercept=0.1,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
+
+
+
+
+```
+
+
+
+```{r Graphical Results: CRPS}}
+
+## Statistical test results: CRPS 
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsBMV_CRPS.pdf"))
+
+TestStats_OptimADLP_BMV <- data.frame(
+    DM_BMV=-DM_CRPS_ADLPvsBMV
+)
+
+ggplot(data=stack(as.data.frame(TestStats_OptimADLP_BMV)),aes(x=ind,y=values)) + 
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s BMV)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('Optimal ADLP v.s BMV(DM)'))
+
+#dev.off()
+
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsEW_CRPS.pdf"))
+
+TestStats_OptimADLP_EW <- data.frame(
+    DM_EW=-DM_CRPS_ADLPvsEW
+)
+
+ggplot(data=stack(as.data.frame(TestStats_OptimADLP_EW)),aes(x=ind,y=values)) +
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s EW)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('Optimal ADLP v.s EW(DM)'))
+
+#dev.off()
+
+TestStats_OptimADLP_SLP <- data.frame(
+    DM_SLP=-DM_CRPS_ADLPvsSLP
+)
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsSLP_CRPS.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_OptimADLP_SLP)),aes(x=ind,y=values)) +
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of DM Statistics (Optimal ADLP v.s SLP)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('Optimal ADLP v.s SLP(DM)'))
+
+#dev.off()
+
+
+TestStats_OptimADLP_ADLP <- data.frame(
+    DM_ADLP=-DM_CRPS_ADLPvsADLP
+)
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsADLP_CRPS.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_OptimADLP_ADLP)),aes(x=ind,y=values)) +
+    geom_boxplot() +
+    labs(x="Hypothesis tests",y="Test statistics") +
+    ggtitle("Distribution of CRPS DM Statistics (ADLP 12 v.s ADLP 13)") +
+    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", size=2) +
+    scale_x_discrete(labels=c('ADLP 12 v.s ADLP 13(DM)'))
+
+#dev.off()
+
+
+
+
+
+```
+
+
+```{r}
+### Calculate the p-value of the test (CRPS):
+
+p_DM_CRPS_ADLPvsEW <- ifelse(1-pnorm(DM_CRPS_ADLPvsEW, 0, 1)<=0.5, 2*(1-pnorm(DM_CRPS_ADLPvsEW, 0, 1)), 2*pnorm(DM_CRPS_ADLPvsEW, 0, 1))
+
+p_DM_CRPS_ADLPvsBMV <- ifelse(1-pnorm(DM_CRPS_ADLPvsBMV, 0, 1)<=0.5, 2*(1-pnorm(DM_CRPS_ADLPvsBMV, 0, 1)), 2*pnorm(DM_CRPS_ADLPvsBMV, 0, 1))
+
+p_DM_CRPS_ADLPvsSLP <- ifelse(1-pnorm(DM_CRPS_ADLPvsSLP, 0, 1)<=0.5,2*(1-pnorm(DM_CRPS_ADLPvsSLP, 0, 1)),2*pnorm(DM_CRPS_ADLPvsSLP, 0, 1))
+
+p_DM_CRPS_ADLPvsADLP <- ifelse(1-pnorm(DM_CRPS_ADLPvsADLP, 0, 1)<=0.5,2*(1-pnorm(DM_CRPS_ADLPvsADLP, 0, 1)),2*pnorm(DM_CRPS_ADLPvsADLP, 0, 1))
+
+
+
+## Plot the box-plot :
+
+TestStats_p_val_ADLP_CRPS <- data.frame(p_DM_EW = p_DM_CRPS_ADLPvsEW,
+                               p_DM_BMV = p_DM_CRPS_ADLPvsBMV,
+                               p_DM_SLP = p_DM_CRPS_ADLPvsSLP,
+                               p_DM_ADLP = p_DM_CRPS_ADLPvsADLP)
+
+
+
+#pdf(paste0("simulation/triangle_", tri.size, "-data/TestStats_p_val_ADLP.pdf"))
+
+ggplot(data=stack(as.data.frame(TestStats_p_val_ADLP_CRPS)),aes(x=ind,y=values))+geom_boxplot()+labs(x="Hypothesis tests",y="p-values")+ggtitle("Distribution of CPRS p-values (ADLP v.s EW, BMV and SLP)")+geom_hline(yintercept=0.05,linetype="dashed", color = "red", size=1)+scale_x_discrete(labels=c('ADLP v.s EW(DM)','ADLP v.s BMV(DM)', 'ADLP v.s SLP(DM)', 'ADLP 12 v.s ADLP 13'))+geom_hline(yintercept=0.1,linetype="dashed", color = "blue", size=1)
+
+#dev.off()
+
+
+
+
+```
+
+
+# Measuring Performance on Aggregate Reserve
+
+```{r Calculate Predicted Reserves}
+central_reserve_estimate <- matrix(NA, n.sims, n.ensembles)
+
+for (sim in 1:n.sims) {
+    meta_mu <- meta_mu_outsample[[sim]]
+    
+    for (i in 1:n.ensembles){
+        ensemble <- all_ensembles[[i]]
+        meta_mu_partitions <- ensemble$partition_func(meta_mu)
+        n.partitions <- length(meta_mu_partitions)
+        ensemble_w <- ensemble$model_weights_simul_sims[[sim]]
+        ensemble_reserve <- c()
+        
+        for (j in 1:n.partitions) {
+
+            meta_partition <- meta_mu_partitions[[j]][, -c(1, 2)]
+          
+            mu_predict <- as.matrix(meta_partition) %*% ensemble_w[[j]]
+            ensemble_reserve <- rbind(ensemble_reserve, mu_predict) 
+        }
+        
+        central_reserve_estimate[sim, i] <- apply(ensemble_reserve,MARGIN=2,FUN=sum)
+    }
+}
+
+colnames(central_reserve_estimate) <- names(all_ensembles)
+
+```
+
+
+```{r Simulating Reserves}
+source('simulation/simulating_ensembles.R')
+
+if (T) {
+  
+    total_reserve_simulations = 1000
+    
+    set.seed(100)
+    
+    suppressWarnings({
+    all_reserve_simulations = simulate_reserves(
+        n.sims, 
+        total_reserve_simulations, 
+        fitted_components_outsample, 
+        all_ensembles
+    )
+    })
+
+    all_simulations <- matrix(NA, nrow = n.sims * total_reserve_simulations,ncol = n.ensembles+2)
+    for (i in 1:n.ensembles) {
+        all_simulations[, i+2] <- all_reserve_simulations[[i]]
+    }
+    
+    # Triangle
+    all_simulations[, 1] <- rep(1:n.sims, each = total_reserve_simulations)
+    # Simulation
+    all_simulations[, 2] <- rep(1:total_reserve_simulations, n.sims)
+    colnames(all_simulations) <- c('Triangle #', 'Simulation #', names(all_ensembles))
+    
+    write.csv(all_simulations, sprintf("simulation/empircal_simulations_ensembles-%s.csv", tri.size), row.names = FALSE)
+}
+
+simulated_reserves <- read.csv(sprintf("simulation/empircal_simulations_ensembles-%s.csv", tri.size), row.names=NULL)
+```
+
+## Calculating Aggregate Reserve Bias
+
+```{r Calculate Reserve Bias}
+true_reserves <- c()
+# Calculate true reserves
+for (sim in 1:n.sims){
+    full_data <- read.csv(sprintf('simulation/triangle_%s-data/sim%s-full-data.csv', tri.size, sim))
+    true_reserves <- c(true_reserves, sum(claims_df_in_out(full_data)$test[, 'aggregate_claims']))
+}
+
+## Use Median as it is more stable: 
+relative_diff_centralBias <- (central_reserve_estimate-true_reserves)/true_reserves
+central_reserve_bias <- apply(abs(relative_diff_centralBias), 2, median)
+
+
+# 75th Quantile
+
+quantile_reserve <- quantile(true_reserves, 0.75)
+quantile_reserve_estimate <- matrix(NA, nrow = n.sims, ncol = ncol(simulated_reserves) - 2)
+for (i in 1:n.sims) {
+    sim_reserve <- simulated_reserves[simulated_reserves$Triangle.. == i, -c(1, 2)]
+    quantile_reserve_estimate[i, ] <- apply(sim_reserve, MARGIN = 2, FUN = function(x) quantile(x, 0.75)) / 10000
+}
+colnames(quantile_reserve_estimate) <- colnames(simulated_reserves[, -c(1, 2)])
+relative_diff_75Bias <- (quantile_reserve_estimate - quantile_reserve)/quantile_reserve
+reserve_bias_75Quantile <- apply(abs(relative_diff_75Bias), MARGIN = 2, median)
+
+
+
+
+```
+
+
+
+
+## Graphical Results of Aggregate Reserve Bias
+
+```{r Exploratory Data Analysis - Reserve Bias Plots}
+
+
+# Reserve Bias
+corres_splitpoints_SLPincluded<-c(0, split_points)
+
+# Central Reserve
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CentralRelativeReserveBias.pdf"))
+
+
+
+mean_reserve_bias <- abs(central_reserve_bias)
+
+par(mar = c(3.8, 3.8, 3.8, 2))
+plot(x=corres_splitpoints_SLPincluded, y=mean_reserve_bias[-c(EW_ind, BMV_ind)],
+     type="p",xlab="Accident Periods",ylab="Mean Aggregate Reserve Bias",
+     main="Mean Absolute Central Reserve Bias v.s. Different split points",
+     ylim = c(0, max(mean_reserve_bias)))
+points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=mean_reserve_bias[optim_ADLP_index],
+       type="p",col="black",pch=16,cex=1.6)
+
+points(x=0,y=mean_reserve_bias[1],type="p",col="grey",pch=16,cex=ifelse(which.min(mean_reserve_bias[-c(EW_ind, BMV_ind)]) == 1, 0.8, 1.6))
+legend('bottomright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
+abline(h = mean_reserve_bias[EW_ind], col = 'red')
+abline(h = mean_reserve_bias[BMV_ind], col = 'green')
+  
+#dev.off()
+
+# 75th Quantile Reserve
+
+par(mar = c(3.8, 3.8, 3.8, 2))
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_RelativeReserveBiasat75Quantile.pdf"))
+
+
+plot(x=corres_splitpoints_SLPincluded, y=reserve_bias_75Quantile[-c(EW_ind, BMV_ind)],
+     type="p",xlab="Accident Periods",ylab="Absolute aggregate Reserve Bias at 75th Quantile",
+     main="Absolute aggregate Reserve Bias at 75th Quantile v.s. Different split points",
+     ylim = c(0, max(reserve_bias_75Quantile)))
+points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=reserve_bias_75Quantile[optim_ADLP_index ],
+       type="p",col="black",pch=16,cex=1.6)
+
+points(x=0,y=reserve_bias_75Quantile[1],type="p",col="grey",pch=16,cex=ifelse(which.min(reserve_bias_75Quantile [-c(EW_ind, BMV_ind)]) == 1, 0.8, 1.6))
+legend('bottomright' ,legend=c("SLP","ADLP 12"),col=c("grey","black"),pch=c(16,16),cex=1)
+abline(h = reserve_bias_75Quantile [EW_ind], col = 'red')
+abline(h = reserve_bias_75Quantile [BMV_ind], col = 'green')
+
+#dev.off()
+
+```
+
+```{r}
+# Define the names of all the strategies used in the paper: 
+all_ensembles_names <- c()
+for(i in 1:19){
+    all_ensembles_names[i] <- paste("ADLP", i-1)
+}
+all_ensembles_names[20] <- "EW"
+all_ensembles_names[21] <- "BMV"
+
+
+## Plot the box plot of the reserve bias: 
+
+### Plot the box-plot of central relative reserve bias: 
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_BoxplotRelativeCentralReserveBias.pdf"))
+
+
+ggplot(data=stack(as.data.frame(relative_diff_centralBias[, c("ADLP_par0", "ADLP_par12", "EW", "BMV")])),aes(x=ind,y=values))+geom_boxplot()+labs(x="Models",y="Relative reserve bias")+ggtitle("Distribution of central relative reserve bias")+ylim(-0.4, 0.8)+scale_x_discrete(labels = c("SLP", "ADLP 12", "EW", "BMV"), guide = guide_axis(angle = 45))
+
+#dev.off()
+
+### Plot the box-plot of 75th quantile relative reserve bias: 
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_BoxplotRelative75QuantileReserveBias.pdf"))
+
+
+ggplot(data=stack(as.data.frame(relative_diff_75Bias[, c("ADLP_par0", "ADLP_par12", "EW", "BMV")])),aes(x=ind,y=values))+geom_boxplot()+labs(x="Models",y="Relative reserve bias (75th quantile)")+ggtitle("Distribution of relative reserve bias(75th quantile)")+ylim(-0.25, 0.5)+scale_x_discrete(labels = c("SLP", "ADLP 12", "EW", "BMV"), guide = guide_axis(angle = 45))
+
+#dev.off()
+
+```
+
+
+
+# Investigation over Estimated Model Weights
+
+
+```{r Calculation of model weights across simulations}
+## Calculate the mean model weights: 
+
+mean_weights_all <- matrix(NA, ncol = n.models, nrow = length(split_points))
+for(j in 2:(length(split_points)+1)){
+    model_weights_simul_mat <- matrix(NA,nrow=n.sims,ncol=n.models)
+    for (i in 1:n.sims){
+      model_weights_simul_mat[i,]<-as.vector(unlist(all_ensembles[[j]]$model_weights_simul_sims[[i]][1]))
+    }
+    mean_weights_all[j-1, ] <- apply(model_weights_simul_mat, MARGIN=2,FUN=mean)
+}
+## Each row represents the model weights (in subset 1) in each ADLP ensemble
+
+## Since the weights in subset 2 is trained using all the data, all the ADLP ensembles have the same weights in Subset 2, which is equal to the weights for SLP:
+model_weights_simul_mat_Subset2 <- matrix(NA,nrow=n.sims,ncol=n.models)
+for (i in 1:n.sims){
+      model_weights_simul_mat_Subset2[i,]<-as.vector(unlist(all_ensembles[[2]]$model_weights_simul_sims[[i]][2]))
+}
+
+mean_weights_subset2 <- apply(model_weights_simul_mat_Subset2, MARGIN=2,FUN=mean)
+```
+
+
+```{r Graphical Results: Estimated model weights over subsets}
+##### Plotting model Weights for Subset 1: 
+
+### Need to comment out the ZALN and ZAGA lines if one selects the triangle size to be 20: 
+express <- c(
+    expression(GLM[ccODP]),
+    expression(GLM[ccGA]),
+    expression(GLM[ccLN]),
+    expression(GLM[ZAGA]),
+    expression(GLM[ZALN]),
+    expression(GLM[hcODP]),
+    expression(GLM[hcGA]),
+    expression(GLM[hcLN]),
+    expression(GLM[calODP]),
+    expression(GLM[calGA]),
+    expression(GLM[calLN]),
+    expression(SP[NO]),
+    expression(SP[GA]),
+    expression(SP[LN]),
+    expression(GAMLSS[GA]),
+    expression(GAMLSS[LN]),
+    expression(GLM[ppci]),
+    expression(GLM[ppcf])
+)
+
+mean_weight_ADLP_dat <- data.frame(
+    Weights=c(t(mean_weights_all)), 
+    Models=rep(model_names,times=length(split_points)),
+    SplitPoint=rep(as.character(corres_splitpoints_SLPincluded[2:(length(split_points)+1)]),each=n.models)
+)
+mean_weights_ADLP<-apply(mean_weights_all, FUN=mean,MARGIN=2)
+mean_weight_ADLP_dat$SplitPoint<-factor(mean_weight_ADLP_dat$SplitPoint,levels=as.character(corres_splitpoints_SLPincluded[2:(length(split_points)+1)]))
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_ModelWeightsSubset1.pdf"))
+ggplot(mean_weight_ADLP_dat, aes(fill=SplitPoint, y=Weights, x=reorder(Models,-Weights))) +
+    geom_bar(position="dodge", stat="identity") +
+    ggtitle("Model weights under ADLP with different split points (Subset 1)") +
+    labs(x="Model Names",y="Model Weights") +
+    scale_x_discrete(labels=express[order(mean_weights_ADLP,decreasing=TRUE)], guide = guide_axis(angle = 45)) +
+    theme(plot.margin = unit(c(0.1,0.1,0.1,0), "cm"))
+
+#dev.off()
+
+##### Plotting model Weights for Subset 2: 
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_ModelWeightsSubset2.pdf"))
+
+w_M_mean<-data.frame(value=mean_weights_subset2,Models=model_names)
+ggplot(data=w_M_mean,mapping=aes(x=reorder(Models,-value),y=value)) +
+    geom_bar(stat="identity") +
+    ggtitle("Model Weights under ADLP (Subset 2)") +
+    labs(x="Model Names",y="Model Weights") +
+    scale_x_discrete(labels=express[order(mean_weights_subset2,decreasing=TRUE)],guide = guide_axis(angle = 45))
+
+#dev.off()
+```
+
+# Appendix C Results
+## Three Subset Fitting
+
+```{r Calculating Ensemble using 3 Subset}
+stopifnot(tri.size == 40)
+
+# Note this is currently only defined for triangle size 40
+all_ensembles_3par <- fit_all_partition_ensembles_40_3par(
+    meta_dens_valid, 
+    meta_dens_outsample
+)
+```
+
+```{r Scoring Metrics over 3 subset ADLP ensemble, echo=TRUE}
+ensemble_dens_3par <- calc_dens_ensemble(meta_dens_outsample, all_ensembles_3par)
+ensemble_logS_3par <- lapply(
+    ensemble_dens_3par, FUN = function(x) lapply(x, FUN = function(y) log(y+1e-6))
+)
+names(ensemble_logS_3par) <- names(all_ensembles_3par)
+
+mean_score_over_sim_3Subsets <- lapply(ensemble_logS_3par, FUN = function(x) unlist(lapply(x, FUN = function(y) mean(y))))
+
+```
+
+```{r 3 Subset ADLP Log Score}
+### Comparison with the 2 subsets case: 
+mean_score_over_sim_2Subsets <- lapply(ensemble_logS, FUN = function(x) unlist(lapply(x, FUN = function(y) mean(y))))
+
+mean_score_over_sim_3Subsets_new <- as.data.frame(mean_score_over_sim_3Subsets) %>%
+    select(-c('ADLP_sub3_par1')) %>%
+    mutate(`ADLP 9` = data.frame(mean_score_over_sim_2Subsets)[, c('ADLP_par9')],
+           `ADLP 11` = data.frame(mean_score_over_sim_2Subsets)[, c('ADLP_par11')],
+           `ADLP 14` = data.frame(mean_score_over_sim_2Subsets)[, c('ADLP_par14')]) %>%
+    rename(`ADLP 9+` =  ADLP_sub3_par2,
+           `ADLP 11+` = ADLP_sub3_par3,
+           `ADLP 14+` = ADLP_sub3_par4)
+
+mean_score_over_sim_3Subsets_new <- mean_score_over_sim_3Subsets_new[, c('ADLP 9', 'ADLP 9+',
+                                                                         'ADLP 11', 'ADLP 11+',
+                                                                         'ADLP 14', 'ADLP 14+')]
+
+#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_LogScore3Subsets.pdf"))
+
+ggplot(data=stack(data.frame(mean_score_over_sim_3Subsets_new)), aes(x = ind, y = values)) + 
+    geom_boxplot()+labs(x="Model",y="Log Score") +
+    ggtitle("Average Log Score over 100 Simulations for 3 Subset")+scale_x_discrete(labels=c('ADLP 9','ADLP 9+', 'ADLP 11', 'ADLP 11+', 'ADLP 14', 'ADLP 14+'))
+
+#dev.off()
+```
+
+```{r ADLP Mean Log Score}
+apply(mean_score_over_sim_3Subsets_new, FUN = mean, MARGIN = 2)
+```
+
+## SLP of SP_LN and GAMLSS_LS
+
+```{r SLP of SP_LN and GAMLSS_LS}
+
+SP_GAMLSS_LN <- fit_ensemble_model(
+    lapply(meta_dens_outsample, function(x) x[, c('origin', 'dev', 'dens_SpLN', 'dens_LNGAMLSS')]),
+    lapply(meta_dens_outsample, function(x) x[, c('origin', 'dev', 'dens_SpLN', 'dens_LNGAMLSS')]),
+    par0
+)
+
+# SP_GAMLSS_LN$model_weights_simul_sims
+```
