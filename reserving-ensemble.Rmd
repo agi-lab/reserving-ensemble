@@ -715,17 +715,6 @@ reserve_bias_75Quantile <- apply(abs(relative_diff_75Bias), MARGIN = 2, median)
 
 ```
 
-```{r}
-AME_75quantile <- apply((quantile_reserve_estimate - quantile_reserve)/quantile_reserve_estimate, MARGIN = 2, FUN = function(x) abs(median(x)))
-plot(x=corres_splitpoints_SLPincluded, y = AME_75quantile[-c(EW_ind, BMV_ind)], xlab = "Accident Periods", ylab = "Absolute Median error", ylim = c(0, mean_reserve_bias[EW_ind]), main = "Absolute median error (75 quantile)")
-abline(h = mean_reserve_bias[EW_ind], col = 'red')
-abline(h = mean_reserve_bias[BMV_ind], col = 'green')
-
-#AME_central <- apply(relative_diff_centralBias, MARGIN = 2, FUN = function(x) abs(median(x)))
-
-
-
-```
 
 
 
