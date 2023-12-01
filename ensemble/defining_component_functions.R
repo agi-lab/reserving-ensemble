@@ -119,10 +119,11 @@ cal_sigma_LN<-function(param){
 cal_CDF_LN<-function(y, param, new_y = F){
     pred_mu<-param$pred_mu
     pred_sigma<-param$pred_sigma
-    if (!new_y) {return(pLNO(q=y,mu=pred_mu,sigma=pred_sigma))}
+    tau<-param$tau
+    if (!new_y) {return(pLNO(q=y+tau,mu=pred_mu,sigma=pred_sigma))}
     else {return(mapply(
         function(mu, sigma)
-            pLNO(q=y,mu=mu,sigma=sigma), pred_mu, pred_sigma)
+            pLNO(q=y+tau,mu=mu,sigma=sigma), pred_mu, pred_sigma)
     )}
 }
 
@@ -168,10 +169,11 @@ cal_sigma_GA<-function(param){
 cal_CDF_GA<-function(y, param, new_y = F){
     pred_mu<-param$pred_mu
     pred_sigma<-param$pred_sigma
-    if (!new_y) {return(pGA(q=y,mu=pred_mu,sigma=pred_sigma))}
+    tau<-param$tau
+    if (!new_y) {return(pGA(q=y+tau,mu=pred_mu,sigma=pred_sigma))}
     else {return(mapply(
         function(mu, sigma)
-            pGA(q=y,mu=mu,sigma=sigma), pred_mu, pred_sigma)
+            pGA(q=y+tau,mu=mu,sigma=sigma), pred_mu, pred_sigma)
     )}
 }
 
@@ -556,10 +558,11 @@ cal_sigma_GA_Gamlss<-function(param){
 cal_CDF_GA_Gamlss<-function(y, param, new_y = F){
     pred_mu<-param$pred_mu
     pred_sigma<-param$pred_sigma
-    if (!new_y) {return(pGA(q=y,mu=pred_mu,sigma=pred_sigma))}
+    tau<-param$tau
+    if (!new_y) {return(pGA(q=y+tau,mu=pred_mu,sigma=pred_sigma))}
     else {return(mapply(
         function(mu, sigma)
-            pGA(q=y,mu=mu,sigma=sigma), pred_mu, pred_sigma)
+            pGA(q=y+tau,mu=mu,sigma=sigma), pred_mu, pred_sigma)
     )}
 }
 
@@ -606,10 +609,11 @@ cal_sigma_LN_Gamlss<-function(param){
 cal_CDF_LN_Gamlss<-function(y, param, new_y = F){
     pred_mu<-param$pred_mu
     pred_sigma<-param$pred_sigma
-    if (!new_y) {return(pLNO(q=y,mu=pred_mu,sigma=pred_sigma))}
+    tau<-param$tau
+    if (!new_y) {return(pLNO(q=y+tau,mu=pred_mu,sigma=pred_sigma))}
     else {return(mapply(
         function(mu, sigma)
-            pLNO(q=y,mu=mu,sigma=sigma), pred_mu, pred_sigma)
+            pLNO(q=y+tau,mu=mu,sigma=sigma), pred_mu, pred_sigma)
     )}
 }
 

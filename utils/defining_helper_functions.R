@@ -11,7 +11,7 @@
 vlookup_N_i <- function(N, data){
     
     N_rep <- c()
-    occurence_years <- as.numeric(data$origin)
+    occurence_years <- as.numeric(as.character(data$origin))
     
     for (i in occurence_years) {
         N_rep <- c(N_rep, N[i])
@@ -33,6 +33,7 @@ MM_func<-function(w,dat){
 }
 
 MM_optim <- function(w_init,dat,testdat,nIters){
+    dat <- dat + 1e-16
     w <- w_init
     i <- 0
     prev_loss <- -mean(log(dat%*%w_init))
