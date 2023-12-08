@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 
-
+ 
 ```{r Setup, results='hide', echo=FALSE}
 # NOTE remember to 'restart R and clear all outputs' if changing triangle size
 # Number of triangles/simulations
