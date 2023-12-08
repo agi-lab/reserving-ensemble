@@ -45,7 +45,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     mu_ODPGLM<-cal_mu_ODP(param_ODPGLM)
     
     #Gamma 
-    tau_Ga<-5
+    #tau_Ga<-5
     Ga_optimTau<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(origin)+factor(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
     param_GAGLM<-fit_param_GA(Ga_optimTau,train.data,test.data,tau_Ga)
     dens_GAGLM<-cal_dens_GA(y.test, param_GAGLM)
@@ -53,7 +53,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     mu_GAGLM<-pmax(cal_mu_GA(param_GAGLM)-tau_Ga,0)
     
     #Log-Normal
-    tau_LN<-5
+    #tau_LN<-5
     LN_optimTau<-gamlss(formula=(aggregate_claims+tau_LN)~factor(origin)+factor(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
     param_LNGLM<-fit_param_LN(LN_optimTau,train.data,test.data,tau_LN)
     dens_LNGLM<-cal_dens_LN(y.test, param_LNGLM)
@@ -122,6 +122,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     ####Smoothing Spline
     #Under Normal Assumption
     sp_Normal<-gamlss(formula=aggregate_claims~scs(origin)+scs(dev),data=train.data.numeric,family=NO(),trace=FALSE)
+    sp_Normal <- refit(sp_Normal)
     param_SpNormal<-fit_param_NO(sp_Normal,train.data.numeric,test.data.numeric)
     dens_SpNormal<-cal_dens_Normal(y.test, param_SpNormal)
     CDF_SpNormal<-cal_CDF_Normal(y.test, param_SpNormal)
@@ -129,6 +130,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     
     #Under Gamma Assumption
     sp_Gamma<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(origin)+scs(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+    sp_Gamma <- refit(sp_Gamma)
     param_SpGamma<-fit_param_GA(sp_Gamma,train.data.numeric,test.data.numeric,tau_Ga)
     dens_SpGamma<-cal_dens_GA(y.test, param_SpGamma)
     CDF_SpGamma<-cal_CDF_GA(y.test, param_SpGamma)
@@ -136,6 +138,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     
     #Under Log-Normal Assumption
     sp_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(origin)+scs(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+    sp_LN <- refit(sp_LN)
     param_SpLN<-fit_param_LN(sp_LN,train.data.numeric,test.data.numeric,tau_LN)
     dens_SpLN<-cal_dens_LN(y.test, param_SpLN)
     CDF_SpLN<-cal_CDF_LN(y.test, param_SpLN)
@@ -145,6 +148,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     #GAMLSS 2: Smooth Effects on the predictor for sigma term
     #Under Gamma Assumption
     gamlss_GA<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+    gamlss_GA <- refit(gamlss_GA)
     param_GaGAMLSS<-fit_param_GAGamlss(gamlss_GA,train.data.numeric,test.data.numeric,tau_Ga)
     dens_GaGAMLSS<-cal_dens_GA_Gamlss(y.test, param_GaGAMLSS)
     CDF_GaGAMLSS<-cal_CDF_GA_Gamlss(y.test, param_GaGAMLSS)
@@ -152,6 +156,7 @@ fit_all_component_models_40 <- function(train.data, test.data) {
     
     #Under Log-Normal Assumption
     gamlss_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+    gamlss_LN <- refit(gamlss_LN)
     param_LNGAMLSS<-fit_param_LNGamlss(gamlss_LN,train.data.numeric,test.data.numeric,tau_LN)
     dens_LNGAMLSS<-cal_dens_LN_Gamlss(y.test, param_LNGAMLSS)
     CDF_LNGAMLSS<-cal_CDF_LN_Gamlss(y.test, param_LNGAMLSS)
@@ -308,7 +313,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     mu_ODPGLM<-cal_mu_ODP(param_ODPGLM)
     
     #Gamma 
-    tau_Ga<-5
+    #tau_Ga<-5
     Ga_optimTau<-gamlss(formula=(aggregate_claims+tau_Ga)~factor(origin)+factor(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"))
     param_GAGLM<-fit_param_GA(Ga_optimTau,train.data,test.data,tau_Ga)
     dens_GAGLM<-cal_dens_GA(y.test, param_GAGLM)
@@ -316,7 +321,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     mu_GAGLM<-pmax(cal_mu_GA(param_GAGLM)-tau_Ga,0)
     
     #Log-Normal
-    tau_LN<-5
+    #tau_LN<-5
     LN_optimTau<-gamlss(formula=(aggregate_claims+tau_LN)~factor(origin)+factor(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"))
     param_LNGLM<-fit_param_LN(LN_optimTau,train.data,test.data,tau_LN)
     dens_LNGLM<-cal_dens_LN(y.test, param_LNGLM)
@@ -371,6 +376,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     ####Smoothing Spline
     #Under Normal Assumption
     sp_Normal<-gamlss(formula=aggregate_claims~scs(origin)+scs(dev),data=train.data.numeric,family=NO(),trace=FALSE)
+    sp_Normal <- refit(sp_Normal)
     param_SpNormal<-fit_param_NO(sp_Normal,train.data.numeric,test.data.numeric)
     dens_SpNormal<-cal_dens_Normal(y.test, param_SpNormal)
     CDF_SpNormal<-cal_CDF_Normal(y.test, param_SpNormal)
@@ -378,6 +384,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     
     #Under Gamma Assumption
     sp_Gamma<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(origin)+scs(dev),data=train.data.numeric,family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+    sp_Gamma <- refit(sp_Gamma)
     param_SpGamma<-fit_param_GA(sp_Gamma,train.data.numeric,test.data.numeric,tau_Ga)
     dens_SpGamma<-cal_dens_GA(y.test, param_SpGamma)
     CDF_SpGamma<-cal_CDF_GA(y.test, param_SpGamma)
@@ -385,6 +392,7 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     
     #Under Log-Normal Assumption
     sp_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(origin)+scs(dev),data=train.data.numeric,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+    sp_LN <- refit(sp_LN)
     param_SpLN<-fit_param_LN(sp_LN,train.data.numeric,test.data.numeric,tau_LN)
     dens_SpLN<-cal_dens_LN(y.test, param_SpLN)
     CDF_SpLN<-cal_CDF_LN(y.test, param_SpLN)
@@ -393,14 +401,16 @@ fit_all_component_models_20 <- function(train.data, test.data) {
     ####GAMLSS
     #GAMLSS 2: Smooth Effects on the predictor for sigma term
     #Under Gamma Assumption
-    gamlss_GA<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+    gamlss_GA<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~as.numeric(as.character(dev)),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
+    gamlss_GA <- refit(gamlss_GA)
     param_GaGAMLSS<-fit_param_GAGamlss(gamlss_GA,train.data.numeric,test.data.numeric,tau_Ga)
     dens_GaGAMLSS<-cal_dens_GA_Gamlss(y.test, param_GaGAMLSS)
     CDF_GaGAMLSS<-cal_CDF_GA_Gamlss(y.test, param_GaGAMLSS)
     mu_GaGAMLSS<-pmax(cal_mu_GA_Gamlss(param_GaGAMLSS)-tau_Ga,0)
     
     #Under Log-Normal Assumption
-    gamlss_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+    gamlss_LN<-gamlss(formula=(aggregate_claims+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~as.numeric(as.character(dev)),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE)
+    gamlss_LN <- refit(gamlss_LN)
     param_LNGAMLSS<-fit_param_LNGamlss(gamlss_LN,train.data.numeric,test.data.numeric,tau_LN)
     dens_LNGAMLSS<-cal_dens_LN_Gamlss(y.test, param_LNGAMLSS)
     CDF_LNGAMLSS<-cal_CDF_LN_Gamlss(y.test, param_LNGAMLSS)

@@ -16,15 +16,24 @@
 ################################################################################
 
 dODP<-function(y,lambda,phi, new_y = F) {
-    
-    if (!new_y) {
-        ifelse(rep(phi, length(y)) < 1e-6, dpois(floor(y), lambda), dpois(floor(y/phi), floor(lambda/phi))/phi)
-    } else {
-        ifelse(matrix(rep(phi, length(y)), ncol = length(phi)), 
-               mapply(function(lambda) dpois(floor(y), lambda), lambda),
-               mapply(function(lambda, phi) dpois(floor(y/phi), floor(lambda/phi))/phi, lambda, phi))
-    }
-}
+     
+     if (!new_y) {
+         ifelse(rep(phi, length(y)) < 1e-6, dpois(floor(y), lambda), dpois(floor(y/phi), floor(lambda/phi))/phi)
+     } else {
+         ifelse(matrix(rep(phi, length(y)), ncol = length(phi)), 
+                mapply(function(lambda) dpois(floor(y), lambda), lambda),
+                mapply(function(lambda, phi) dpois(floor(y/phi), floor(lambda/phi))/phi, lambda, phi))
+     }
+ }
+
+# dODP<-function(y, lambda,phi, new_y = F) {
+#     if (!new_y) {
+#         dtweedie(y = y, mu = lambda, phi = phi, power = 1)
+#     } else {
+#         mapply(function(lambda, phi) dtweedie(x = y, mu = lambda, phi = phi, power = 1), lambda, phi)
+#     }
+# }
+
 
 pODP<-function(y, lambda,phi, new_y = F) {
     if (!new_y) {
