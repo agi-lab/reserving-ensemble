@@ -94,68 +94,6 @@ for (sim in 1:n.sims) {
 ```
 
 
-
-```{r}
-## Testing codes: ###################################
-#########################################################################################################
-######################################################################
-
-#str(past_data_split$train)
-#str(past_data_split$valid)
-
-#str(past_data_split$train)
-#str(past_data_split$valid)
-
-train.data <- past_data_split$train
-test.data <- past_data_split$valid
-
-#train.data <- full_data_split$train
-#test.data <- full_data_split$test
-#str(rbind(full_data_split$train, full_data_split$valid))
-
-train.data.numeric <- df.to.numeric(train.data)
-test.data.numeric <- df.to.numeric(test.data)
-y.test <- test.data.numeric$aggregate_claims
-
-
-   
-```
-
-```{r}
-gamlss_LN_prev <- gamlss(formula=(aggregate_claims+tau_LN)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~cs(as.numeric(as.character(dev))),family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE, use.weights=FALSE)
-
-gamlss_LN_current <- gamlss(formula=(aggregate_claims+tau_LN)~scs(origin)+scs(dev),data=train.data.numeric,sigma.formula=~dev,family=LOGNO(mu.link="identity",sigma.link="log"),trace=FALSE, use.weights=FALSE)
-
-gamlss_LN_prev$sigma.coefficients == gamlss_LN_current$sigma.coefficients
-abs(sum(gamlss_LN_current$residuals))
-## The sum of absolute residuals are less than 0.1: no warning message
-```
-
-```{r}
-print("Predict LNGAMLSS (with cs(dev))")
-pred_test_LNGAMLSS <- predict(gamlss_LN_prev, what = "sigma", data = train.data.numeric,  newdata = test.data.numeric)
-print("Predict LNGAMLSS (with numeric(dev))")
-pred_test_LNGAMLSS <- predict(gamlss_LN_current, what = "sigma", data = train.data.numeric,  newdata = test.data.numeric)
-```
-
-```{r}
-gamlss_GA_prev<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~scs(as.numeric(as.character(dev))),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-
-gamlss_GA_current<-gamlss(formula=(aggregate_claims+tau_Ga)~scs(as.numeric(as.character(origin)))+scs(as.numeric(as.character(dev))),data=train.data.numeric,sigma.formula=~as.numeric(as.character(dev)),family=GA(mu.link="log", sigma.link ="log"),trace=FALSE)
-
-gamlss_GA_current <- refit(gamlss_GA_current)
-```
-
-```{r}
-abs(sum(gamlss_GA_current$residuals))
-## The sum of absolute residuals are grater than 0.1: warning message appears
-print("Predict GaGAMLSS (with cs(dev))")
-pred_test_GaGAMLSS <- predict(gamlss_GA_prev, what = "mu", data = train.data,  newdata = test.data)
-print("Predict GaGAMLSS (with numeric(dev))")
-pred_test_GaGAMLSS <- predict(gamlss_GA_current, what = "mu", data = train.data,  newdata = test.data)
-```
-
-
 # Fitting Benchmark Models
 
 This section fits the benchmark models described in **3.2: Best Model in the Validation set (BMV)** and **3.3: Equally Weighted ensemble (EW)** in the paper. 
