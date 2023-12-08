@@ -1,0 +1,24 @@
+Required packages:
+
+The following packages are used in running the codes:
+
+- SynthETIC
+- gamlss.inf
+- gamlss
+- ChainLadder
+- ggplot2
+- tweedie
+- coda
+- dplyr
+- PACLasso
+- groupdata2
+
+Users can easily load or install these packages by running the load_required_packages.R script included in this repository.
+
+Session information:
+
+The codes in this repository were developed and tested in the following environment:
+
+- R version 4.1.2 (2021-11-01)
+- Platform: x86_64-apple-darwin17.0 (64-bit)
+- Running under: macOS Monterey 12.1
