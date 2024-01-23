@@ -5,6 +5,12 @@
 
 # Helper Functions for Fitting Models
 ################################################################################
+
+# Defining the offsets used in the non-negative distributions:
+tau_Ga <- 5
+tau_LN <- 5
+
+
 # Takes in array of N_i by occurence years and essentially performs a Vlookup on
 # N_i depending on the occurence year in data
 # i'th element of N_i corresponds to occurence year i
@@ -33,7 +39,6 @@ MM_func<-function(w,dat){
 }
 
 MM_optim <- function(w_init,dat,testdat,nIters){
-    dat <- dat + 1e-16
     w <- w_init
     i <- 0
     prev_loss <- -mean(log(dat%*%w_init))
@@ -50,6 +55,7 @@ MM_optim <- function(w_init,dat,testdat,nIters){
     }
     return(list(finalparams=w, finalNLL = current_loss))
 }
+
 
 ################################################################################
 ## Transforms the origin and development columns to numerics and factors respectively
