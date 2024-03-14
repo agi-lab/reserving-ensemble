@@ -8,7 +8,7 @@ output: html_notebook
 ```{r Setup, results='hide', echo=FALSE}
 # NOTE remember to 'restart R and clear all outputs' if changing triangle size
 # Number of triangles/simulations
-n.sims <- 100
+n.sims <- 10
 tri.size <-40
 ## Note: the current code only supports triangle size of 20 x 20 and 40 x 40 
 
@@ -305,7 +305,7 @@ legend('topright',
 
 # Statistical Tests of GoF Measures
 
-This section generates the statistical test results for Log Score and CRPS as shown in **6.2.3. Analysing the difference in distributional forecast performance using statistical tests** in the paper. 
+This section generates the statistical test results for Log Score as shown in **6.2.3. Analysing the difference in distributional forecast performance using statistical tests** in the paper. 
 
 ```{r Calc DM and Adj. DM Test Scores}
 # names(all_ensembles)
@@ -725,181 +725,10 @@ ggplot(data=stack(data.frame(mean_score_over_sim_3Subsets_new)), aes(x = ind, y 
 apply(mean_score_over_sim_3Subsets_new, FUN = mean, MARGIN = 2)
 ```
 
+
 ## Results for CRPS calculation
 
 This section calculates and presents the CRPS results of the fitted ensembles as shown in **Appendix D.3 Results for CRPS calculation** in the paper.
-
-```{r Calculate CRPS for each new observation y_k}
-suppressWarnings({
-
-
-    ensemble_CRPS <- calc_crps_ensemble(
-    n.sims, 
-    0.5,
-    fitted_components_outsample, 
-    all_ensembles
-)
-
-})
-
-#CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) mean(unlist(x))))[1:(n.ensembles-2)]
-#CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) median(unlist(x))))[1:(n.ensembles-2)]
-```
-
-
-```{r Calculate average CRPS}
-CRPS_comparision_ADLP <- unlist(lapply(ensemble_CRPS, FUN = function(x) mean(unlist(x))))[1:(n.ensembles-2)]
-
-```
-
-
-```{r Exploratory Data Analysis - CRPS Plots}
-
-optim_ADLP_index_CRPS <- which.min(CRPS_comparision_ADLP)
-
-# CRPS Boxplots
-print("Warnings: the following plots are only available for Triangle size 40 (i.e., the main results in the paper)")
-mean_score_over_sim <- lapply(ensemble_CRPS, FUN = function(x) unlist(lapply(x, FUN = function(y) mean(y))))
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPSBoxPlot.pdf"))
-
-ggplot(data=stack(data.frame(mean_score_over_sim)[, c(optim_ADLP_index, optim_ADLP_index_CRPS, 20, 21)]), aes(x = ind, y = values)) + 
-    ylim(12, 22) +
-    geom_boxplot()+labs(x="Model",y="CRPS") +
-    scale_x_discrete(labels=c(all_ensembles_names[optim_ADLP_index],all_ensembles_names[optim_ADLP_index_CRPS], 'EW', 'BMV'))  + ggtitle(paste("Average CRPS over 100 simulations"))
-
-#dev.off()
-
-# CRPS with Different Split Points
-corres_splitpoints_SLPincluded<-c(0, split_points)
-
-#par(mar = c(3.8, 3.8, 3.8, 2))
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_CRPSbySplitpoints.pdf"))
-
-plot(x=corres_splitpoints_SLPincluded, y=CRPS_comparision_ADLP,
-     type="p",xlab="Accident Periods",ylab="Mean CRPS",
-     main=paste("Mean CRPS v.s. Different split points"))
-points(x=corres_splitpoints_SLPincluded[which.min(CRPS_comparision_ADLP)], y=min(CRPS_comparision_ADLP),
-       type="p",col="black",pch=16,cex=1.6)
-
-points(x=corres_splitpoints_SLPincluded[optim_ADLP_index], y=CRPS_comparision_ADLP[optim_ADLP_index],
-      type="p",col="brown",pch=16,cex=1.6)
-
-points(x=0,y=CRPS_comparision_ADLP[1],type="p",col="grey",pch=16,cex=ifelse(which.min(CRPS_comparision_ADLP) == 1, 0.8, 1.6))
-legend('bottomleft' ,legend=c("SLP",all_ensembles_names[optim_ADLP_index_CRPS], all_ensembles_names[optim_ADLP_index]),col=c("grey","black", "brown"),pch=c(16,16),cex=1)
-
-#dev.off()
-
-# CRPS by Accident Periods
-ensemble_all_ap <- lapply(ensemble_CRPS, function(y) as.numeric(sapply(strsplit(names(y[[1]]), "-"), function(x) x[[1]])))
-all_ap <- sort(unique(ensemble_all_ap[[1]]))
-CRPS_AP_ensembles <- mapply(FUN = function(crps, ap_ind) average_by_index(ap_ind, crps), ensemble_CRPS, ensemble_all_ap)
-
-
-```
-
-
-
-```{r Calc CRPS DM and Adj. DM Test Scores}
-# names(all_ensembles)
-# EW ensemble is index 20
-# BMV ensemble is index 21
-
-## Note: here we calculate both DM test statistics and adjusted DM test statistics; however, the readers are recommended using only the DM test statistics to assess model performance, as the adjusted DM test is specifically designed to account for temporal dependence in the time-series forecasting applications, which might not be applicable in the loss reserving case 
-
-SLP_ind <- 1
-
-DM_CRPS_ADLPvsEW <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, EW_ind)
-
-DM_CRPS_ADLPvsBMV <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, BMV_ind)
-DM_optimCRPS_ADLPvsBMV <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index_CRPS, BMV_ind)
-ADM_CRPS_ADLPvsEW <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, EW_ind)
-ADM_CRPS_ADLPvsBMV <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, BMV_ind)
-
-DM_CRPS_ADLPvsSLP <- calc_DM_test_models(ensemble_CRPS, optim_ADLP_index, SLP_ind)
-ADM_CRPS_ADLPvsSLP <- calc_adj_DM_test_models(ensemble_CRPS, optim_ADLP_index, SLP_ind)
-
-DM_CRPS_ADLPvsADLP <- calc_DM_test_models(ensemble_CRPS, which.min(CRPS_comparision_ADLP), optim_ADLP_index)
-ADM_CRPS_ADLPvsADLP <- calc_adj_DM_test_models(ensemble_CRPS, which.min(CRPS_comparision_ADLP), optim_ADLP_index)
-
-```
-
-
-```{r Calc CRPS DM and Adj. DM Test Statistics}
-## Analysing CRPS test statistics: 
-print("CRPS DM test: ADLP vs EW")
-mean(-DM_CRPS_ADLPvsEW > qnorm(0.975))
-print("CRPS DM test: ADLP vs BMV")
-mean(-DM_CRPS_ADLPvsBMV > qnorm(0.975))
-
-
-```
-
-
-```{r Graphical Results: CRPS}
-
-## Statistical test results: CRPS 
-
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsBMV_CRPS.pdf"))
-
-TestStats_OptimADLP_BMV <- data.frame(
-    DM_BMV=-DM_CRPS_ADLPvsBMV
-)
-
-ggplot(data=stack(as.data.frame(TestStats_OptimADLP_BMV)),aes(x=ind,y=values)) + 
-    geom_boxplot() +
-    labs(x="Hypothesis tests",y="Test statistics") +
-    ggtitle("Distribution of DM Statistics; CRPS (Optimal ADLP v.s BMV)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s BMV(DM)'))
-
-#dev.off()
-
-
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsEW_CRPS.pdf"))
-
-TestStats_OptimADLP_EW <- data.frame(
-    DM_EW=-DM_CRPS_ADLPvsEW
-)
-
-ggplot(data=stack(as.data.frame(TestStats_OptimADLP_EW)),aes(x=ind,y=values)) +
-    geom_boxplot() +
-    labs(x="Hypothesis tests",y="Test statistics") +
-    ggtitle("Distribution of DM Statistics; CRPS (Optimal ADLP v.s EW)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s EW(DM)'))
-
-#dev.off()
-
-TestStats_OptimADLP_SLP <- data.frame(
-    DM_SLP=-DM_CRPS_ADLPvsSLP
-)
-
-
-TestStats_OptimADLP_ADLP <- data.frame(
-    DM_ADLP=-DM_CRPS_ADLPvsADLP
-)
-
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsADLP_CRPS.pdf"))
-
-ggplot(data=stack(as.data.frame(TestStats_OptimADLP_ADLP)),aes(x=ind,y=values)) +
-    geom_boxplot() +
-    labs(x="Hypothesis tests",y="Test statistics") +
-    ggtitle("Distribution of DM Statistics; CRPS (ADLP 8 v.s ADLP 12)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP (Log Score) v.s Optimal ADLP (CRPS)'))
-
-#dev.off()
-
-
-
-
-
-```
-
-
-## Results for weighted CRPS calculation
-
-This section calculates and presents the CRPS results of the fitted ensembles as shown in **Appendix D.4 Results for weighted CRPS calculation** in the paper.
 
 
 ```{r Calculate Weighted CRPS for each new observation y_k}
@@ -920,7 +749,6 @@ test_crps <- calc_weighted_crps_ensemble_40(
 
 ```{r Calculate average weighted CRPS}
 CRPS_comparision_ADLP_weighted <- unlist(lapply(test_crps, FUN = function(x) mean(unlist(x))))
-
 ```
 
 ```{r Exploratory Data Analysis - Weighted CRPS Plots}
@@ -938,69 +766,6 @@ ggplot(data=stack(data.frame(mean_score_over_sim)[, c(optim_ADLP_index,  21, 20)
     scale_x_discrete(labels=c(all_ensembles_names[optim_ADLP_index],'BMV', 'EW'))
 
 #dev.off()
-
-
-
-
-
-```
-
-
-```{r Calc Weighted CRPS DM and Adj. DM Test Scores}
-## Calculate test statistics for weighted CRPS:
-DM_WeightedCRPS_ADLPvsBMV <- calc_DM_test_models(test_crps, optim_ADLP_index, BMV_ind)
-DM_WeightedCRPS_ADLPvsEW <- calc_DM_test_models(test_crps, optim_ADLP_index, EW_ind)
-DM_WeightedCRPS_ADLPvsSLP <- calc_DM_test_models(test_crps, optim_ADLP_index, SLP_ind)
-```
-
-```{r Calc Weighted CRPS DM and Adj. DM Test Statistics}
-print("Weighted CRPS DM test: ADLP vs BMV")
-mean(-DM_WeightedCRPS_ADLPvsBMV > qnorm(0.975))
-print("Weighted CRPS DM test: ADLP vs EW")
-mean(-DM_WeightedCRPS_ADLPvsEW > qnorm(0.975))
-```
-
-
-```{r Graphical Results: Weighted CRPS}
-
-## Statistical test results: CRPS 
-
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsBMV_WeightedCRPS.pdf"))
-
-TestStats_OptimADLP_BMV <- data.frame(
-    DM_BMV_weighted=-DM_WeightedCRPS_ADLPvsBMV,
-    DM_BMV = -DM_CRPS_ADLPvsBMV
-)
-
-ggplot(data=stack(as.data.frame(TestStats_OptimADLP_BMV)),aes(x=ind,y=values)) + 
-    geom_boxplot() +
-    labs(x="Hypothesis tests",y="Test statistics") +
-    ggtitle("Distribution of DM Statistics; Weighted CRPS & CRPS (Optimal ADLP v.s BMV)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s BMV(Weighted CRPS)', 'Optimal ADLP v.s BMV(CRPS)'))
-
-#dev.off()
-
-
-#pdf(paste0("plotting/triangle_", tri.size, "_", n.sims, "_testStatisticsOptimADLPvsEW_WeightedCRPS.pdf"))
-
-TestStats_OptimADLP_EW <- data.frame(
-    DM_EW=-DM_WeightedCRPS_ADLPvsEW
-)
-
-ggplot(data=stack(as.data.frame(TestStats_OptimADLP_EW)),aes(x=ind,y=values)) +
-    geom_boxplot() +
-    labs(x="Hypothesis tests",y="Test statistics") +
-    ggtitle("Distribution of DM Statistics; Weighted CRPS (Optimal ADLP v.s EW)") +
-    geom_hline(yintercept=qnorm(0.975),linetype="dashed", color = "red", linewidth=2) +
-    scale_x_discrete(labels=c('Optimal ADLP v.s EW(DM)'))
-
-#dev.off()
-
-TestStats_OptimADLP_SLP <- data.frame(
-    DM_SLP=-DM_WeightedCRPS_ADLPvsSLP
-)
-
 
 
 
